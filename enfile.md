@@ -1,3 +1,7 @@
+---
+title: You got too many open files
+---
+
 # "You got too many open files"
 
 I'm trying to get Ansible 2.0 working on a custom FreeBSD 8.4 that's running custom Python 2.6. That's like fitting satellite navigation on a vintage car, but it's a different story for another day.
