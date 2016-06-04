@@ -105,10 +105,12 @@ Turns out `CTL_P1003_1B_SEM_NSEMS_MAX` corresponds to the sysctl `sem_nsems_max`
 
 That sounds like a very low value.  I set it to 300:
 ```
-sysctl sem.nsems_max=300
+sysctl p1003_1b.nsems_max=300
 ```
 
-Magic!  I stopped getting the "too many open files" error.  I tried a few more times and never ran into the problem again.  I still haven't had a chance to see why `sem.nsems_max` defaults to 30, but I will stop here for now.
+Magic!  I stopped getting the "too many open files" error.  I tried a
+few more times and never ran into the problem again.  I still haven't
+had a chance to see why `p1003_1b.nsems_max` defaults to 30, but I will stop here for now.
 
 ### Afterthought
 
