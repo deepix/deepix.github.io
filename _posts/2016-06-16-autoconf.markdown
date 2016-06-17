@@ -1,0 +1,123 @@
+---
+layout: post
+title: Build fails, only for you
+tags: python ansible freebsd
+---
+
+As programmers, we face it many times: a build fails on only our system.  This is one such tale.
+
+### Conflicting declarations in zeromq
+
+We build many system software into a custom FreeBSD platform.  The first error message I got was while building *zeromq*.  I had freshly synced a branch, merged some changes from another branch, and started a build.
+
+The compiler complained:
+
+```
+CXX    libzmq_la-gssapi_mechanism_base.lo
+In file included from gssapi_mechanism_base.hpp:30,
+from gssapi_mechanism_base.cpp:34:
+/usr/include/gssapi/gssapi.h:316: error: previous declaration of 'gss_OID_desc_struct* GSS_KRB5_NT_PRINCIPAL_NAME' with 'C++' linkage
+/usr/include/gssapi/gssapi_krb5.h:49: error: conflicts with new declaration with 'C' linkage
+```
+
+The error means that we are listing symbols two times, and the two listings conflict with each other.  The error happened only on this branch.  It built fine on the build server and on other branches I had synced on my system.
+
+I wanted to make progress past this problem quickly.  Google showed that the [gssapi.h on Mac](https://opensource.apple.com/source/MITKerberosShim/MITKerberosShim-44.1/Kerberos/gssapi.h) had an embedded `extern "C"`, but mine did not.  I added this to my `/usr/include/gssapi/gssapi.h`, and restarted the build.  The error went away.
+
+### Missing MD2 references in net-snmp
+
+The build now stopped in a different package.  This time, it was a failure while running `configure` to build *net-snmp*.  The config.log had this to say:
+
+```
+configure:5735: gcc -I../zeromq-4.1.0/include [...]  -L../zeromq-4.1.0/src/.libs -L/usr/obj/.../secure/lib/libcrypto -lcrypto  -R/usr/obj/.../secure/lib/libcrypto conftest.c -lzmq >&5
+/usr/lib/libhx509.so.10: undefined reference to `MD2_Init'
+/usr/lib/libhx509.so.10: undefined reference to `MD2_Final'
+/usr/lib/libhx509.so.10: undefined reference to `MD2_Update'
+```
+
+The errors mean that we depend on MD2 encryption routines, but we cannot find them in any of the libraries specified.  I took the conftest.c source from the same file and tried to compile it with the same options.  I got the same error.
+
+Notice that we link with a custom crypto library above.  Turns out our custom library does not have MD2 support.  What if I tried the standard library?  When I used the standard crypto library, I didn't get those errors!  Because it had those routines ('T'):
+
+```
+/usr/ports/security/openssl$ nm ./work/openssl-1.0.1e/libcrypto.so | grep MD2
+000000000006ce20 T MD2
+000000000006cc60 T MD2_Final
+000000000006cdd0 T MD2_Init
+000000000006cce0 T MD2_Update
+000000000006cb00 T MD2_options
+000000000015eea0 R MD2_version
+```
+
+But, but, *it is working for others!*  Everyone is using the same custom library!  What went wrong for me?
+
+Notice that the other library it depends on above is the zeromq library (`-lzmq`).  I replaced its location with my working branch, and that worked too!
+
+(FAIL)
+
+```
+gcc [...] -L../zeromq-4.1.0/src/.libs test.o -lzmq [...]
+```
+
+(OK)
+
+```
+gcc [...] -L../working_branch/zeromq-4.1.0/src/.libs test.o -lzmq [...]
+```
+
+### Back to zeromq
+
+So is something fishy in my zeromq library?  Maybe the error I saw earlier that I "fixed" had to do something about it?
+
+I got rid of the changes I made earlier in `/usr/include/gssapi/gssapi.h` and started a build again.  It failed with the same declaration conflict error as earlier.
+
+Now, I built zeromq on the other branch where it worked and compared the build output.
+
+At first glance, they looked the same.
+
+To understand the compilation more than the bare `CXX`, I checked if there was a way.  `./configure --help` showed that I could do `make V=1`.  I did that, and noticed that there was a `-DHAVE_CONFIG_H` option.  This option means there is a separate config file with "discovered", i.e. *configure*d features.  A search brought up config.hpp, and sure enough, I found this in the broken build:
+
+```
+/* BREAKS BUILD */
+/* Define to 1 if you have the `gssapi_krb5' library (-lgssapi_krb5). */
+#define HAVE_LIBGSSAPI_KRB5 1
+```
+
+How did this happen?  I looked at `config.log` in both branches:
+
+(FAIL)
+
+```
+configure:17985: checking for gss_init_sec_context in -lgssapi_krb5
+configure:18010: gcc -std=gnu99 -o conftest -g -O2 -D__BSD_VISIBLE -D_REENTRANT -D_THREAD_SAFE   conftest.c -lgssapi_krb5  -lrt -lpthread  >&5
+configure:18010: $? = 0
+configure:18019: result: yes
+```
+
+(OK)
+
+```
+configure:17967: checking for gss_init_sec_context in -lgssapi_krb5
+configure:17992: gcc -std=gnu99 -o conftest -g -O2 -D__BSD_VISIBLE -D_REENTRANT -D_THREAD_SAFE   conftest.c -lgssapi_krb5  -lrt -lpthread  >&5
+configure:17992: $? = 0
+configure:18004: result: no
+configure:18014: WARNING: libgssapi_krb5 is needed for GSSAPI security
+```
+
+The same command returns "yes" in one branch, but "no" in another!?  What gives?
+
+### Never edit generated files
+
+So, I opened up the configure script that was running the command.  And this is what I found in the working branch:
+
+```
+# XXX
+ac_cv_lib_gssapi_krb5_gss_init_sec_context=no
+# XXX
+```
+
+This explains everything.  Someone had explicitly "disabled" this library check in the `configure` script.  **But this is a generated file!** `autoconf` generates it from configure.ac and configure.in.  For some reason, this file was re-generated by my autoconf during the build.  When that happened, the customization was dropped!
+
+Why this did not happen to me on the other branches, I still do not know.  Maybe the timestamps were wrong only on this particular branch?  I tried another clean sync and build, but the error did not happen again.  I do not understand all the regeneration criteria yet.
+
+Anyway, the fix was to comment a line in `configure.ac` instead.  It's been a very interesting evening.
