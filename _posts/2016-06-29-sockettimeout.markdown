@@ -82,7 +82,7 @@ Our Writer logs all writes, and there were successful writes logged up until bef
 2016/06/27 19:24:46 Writer.go:116: <connection_id> <page_no>
 ```
 
-It checks out: this particular connection received its data last at 19:24:46.  It went idle after that for a few minutes.  The DataNode thread exited 46 seconds later.  Its timeout is set for 60 seconds per the log, so I'm not sure why it went down before that.  One theory I have is that the Writer never sent that data out on the wire: maybe it was buffered in the networking layer of the operating system to be sent out later.  Perhaps its last data transmission was really at 19:24:32?
+It checks out: this particular connection received its data last at 19:24:46.  It went idle after that for a few minutes.  The DataNode thread exited 46 seconds later.  Its timeout is set for 60 seconds per the log, so did the timer actually fire before that?  No.  Our Writer buffers data before it writes to HDFS, and its [chunk size is 64 KB](https://github.com/Microsoft/colinmarc-hdfs/blob/506515c1f01a00e8568b237e840f90bf8fab6cd6/rpc/block_write_stream.go).  The input streams at about 8KB every 7 seconds, so it's very likely that it was still waiting for the buffer to full.  In other words, the Writer has logged that it got a call to Write, but it only wrote to its buffer.  Its last write to HDFS was a few seconds before that.
 
 So the DataNode thread is gone, and now data starts flowing in again, 4 minutes later.  Let me show the log message again:
 
