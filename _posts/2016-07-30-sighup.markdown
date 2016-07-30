@@ -1,0 +1,177 @@
+---
+layout: post
+title: Don't hang up on me
+tags: freebsd signal bash sighup
+---
+
+In my previous post, I posted a command to log via syslog:
+
+```
+nohup myapp | nohup logger -i -t myapp &
+```
+
+It took quite a bit of work to get to that.  This post is about
+that journey.
+
+### The beginning
+
+I first started off with this:
+
+```
+myapp | logger -i -t myapp &
+```
+
+Tried it on my bash prompt, logged out, logged back in.  All good.
+
+OK, I put it in a script that is executed over ssh, and guess what?
+It failed.  Myapp is nowhere to be found!
+
+Hmmm, sounds like a case of SIGHUP.  I knew the shell would send a
+hangup signal to myapp, so I had to ignore it.  Easy:
+
+```
+nohup myapp | logger -i -t myapp &
+```
+
+But no!  Myapp was still gone.
+
+What's going on here?  And why did it work when I tried it in the
+shell myself?
+
+### When to hang up
+
+Turns out bash does not send a SIGHUP by default,
+[if it is an interactive shell](https://www.gnu.org/software/bash/manual/html_node/Signals.html).
+This can be verified by:
+
+```
+$ shopt | grep huponexit
+huponexit	off
+```
+
+This was a surprise to me.
+
+OK, I enabled `huponexit`.  When I ran the same command line, I saw
+that myapp had exited.  At least I could reproduce the problem quicker
+this way.
+
+Reading further in the manual, I found that I could do
+[disown -h](https://www.gnu.org/software/bash/manual/html_node/Job-Control-Builtins.html#Job-Control-Builtins)
+to prevent SIGHUP from being sent to the processes.  This is what my
+command sequence looked like:
+
+```
+$ shopt -s huponexit
+$ myapp | logger -i -t myapp &
+[1] 6584
+$ disown -h
+$ exit
+```
+
+This worked.  I found that myapp was running.
+
+I copied the lines to the ssh'ing script:
+
+```
+myapp | logger -i -t myapp &
+disown -h
+```
+
+But surprise!  Again myapp was gone.  This was becoming a pain.
+
+### Trace ...
+
+I had to find out what was causing this problem.  So I added a bit of
+delay:
+
+```
+myapp | logger -i -t myapp &
+disown -h
+sleep 40
+```
+
+While this slept, on another terminal I found the PID and tried
+[ktrace](https://www.freebsd.org/cgi/man.cgi?query=ktrace&apropos=0&sektion=1&manpath=FreeBSD+8.4-RELEASE&arch=default&format=html)
+on it.
+
+```
+$ pgrep myapp
+7513
+$ ktrace -f myapp.trace -p 7513
+$ pgrep logger
+7514
+$ ktrace -f logger.trace -p 7514
+```
+
+After some time, when the program disappeared as usual, I looked at the trace:
+
+```
+$ kdump -f myapp.trace
+...
+7513 myapp	PSIG  SIGHUP SIG_DFL code=0x10001
+...
+```
+
+Looks like I'm getting SIGHUP, even though I `disown`ed it!
+
+I went back and thought about this.  It hit me that `disown` makes
+sense only on an interactive terminal where you have jobs and
+[job control](https://www.gnu.org/software/bash/manual/html_node/Job-Control-Basics.html#Job-Control-Basics).
+It does not make sense on a non-interactive terminal.  Maybe I had to
+do `nohup` instead, like I was doing before.
+
+So now I did:
+
+```
+nohup myapp | logger -i -t myapp &
+```
+
+But no, again the application disappeared.
+
+### ... And trace again
+
+Another ktrace, and I saw that the program was not exiting due to
+SIGHUP, but something very different:
+
+```
+85932 myapp CALL  write(0x1,0xc820076dc0,0x89)
+85932 myapp RET   write -1 errno 32 Broken pipe
+85932 myapp PSIG  SIGPIPE caught handler=0x45c680 mask=0x0 code=0x10006
+```
+
+Looks like we tried to write to the pipe but there was nobody
+listening!  Which means, `logger` is gone.  Why did it disappear, since
+I had already prepended a `nohup`?
+
+By this time I was already quite tired and this one took a long time.
+I looked at
+[nohup source code](http://web.mit.edu/freebsd/head/usr.bin/nohup/nohup.c).
+At its core, it was very simple.  Just two lines to say 'Set the
+program to ignore SIGHUP, run the program'.
+
+{% highlight C %}
+         (void)signal(SIGHUP, SIG_IGN);
+         execvp(*argv, argv);
+{% endhighlight %}
+
+I looked at bash source code where it would send SIGHUP.  In *jobs.c*,
+it would simply call `killpg()` on the process group.  Nothing special
+there either.
+
+But then, it occurred to me: `nohup` will never see the full pipeline!
+That would have already been broken down by the shell!  Maybe I should
+prepend `nohup` for logger as well!
+
+### The end
+
+OK, that's what I did:
+
+```
+nohup myapp | nohup logger -i -t myapp &
+```
+
+This, finally, is what worked, and where we started this story.  Of
+course, I won't mention the bits about writing a simple C program to
+narrow down testing, or using commands like `sleep 40 | wc` for
+experimentation, or trying out in vain a variety of syntactic
+suggestions offered at *StackOverflow.com!*
