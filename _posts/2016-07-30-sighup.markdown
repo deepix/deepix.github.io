@@ -175,3 +175,7 @@ course, I won't mention the bits about writing a simple C program to
 narrow down testing, or using commands like `sleep 40 | wc` for
 experimentation, or trying out in vain a variety of syntactic
 suggestions offered at *StackOverflow.com!*
+
+### Update: Sep. 30 2016
+
+A colleague pointed out that you can just put the pipeline in a separate script by itself, and then call nohup on the script.  I don't know why I never tried it, but it *did* work.  Oh well.

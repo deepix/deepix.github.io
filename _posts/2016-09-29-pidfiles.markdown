@@ -1,0 +1,32 @@
+---
+layout: post
+title: Weird PID Files
+tags: unix daemons shell-scripts
+---
+
+This is a story of multiple processes running on a system, but with empty PID files.
+
+It took a lot of debugging.
+
+We use shell scripts to start our processes.  Ideally they should write out their own PID files (and deal with SIGHUP), but anyway, we were doing it in our script as follows:
+
+```
+nohup cmdline &
+find_process cmdline > pidfile
+```
+
+You can imagine `find_process` to be a function that goes through all the running processes.  If it finds a matching command line, it will note the PID in the pidfile.
+
+The problem we were seeing is this:
+
+ * On system startup, the PID file was empty, but there was a process running.
+ * When we restarted manually, the PID file would get the PID correctly (we had to kill the previous process manually, or risk having multiple running processes and PIDs in the pidfile).
+ * Even with manual restart, some processes would never get PIDs in their files.
+
+We run on FreeBSD, and it comes with a handy `/etc/rc.subr` that contains a bunch of utility functions to help start and stop programs.  It turned out that there were two problems.
+
+The first is that find_process() uses `ps` to match processes.  `ps` limits its output to terminal width unless you give `-ww` as an argument (go figure).  This is why some of our programs would never get a match in the pidfile, because the program would be started non-interactively via ssh and `ps` (without -ww) would never match.  I found that newer versions of rc.subr has this fixed, but for our case, I ended up adding this argument.  Unfortunately, a colleague of mine had discovered this problem earlier but she reported it a few weeks back and then I forgot all about it, only to rediscover it the hard way.
+
+The second problem is a bit more involved.  From the debug prints we put in, it seemed as if we were trying to find a match very soon.  That is, when we tried to `find_process`, `nohup` would still be running.  It would fail to match the program itself.  This happens only at system startup, when it is already under load.  Temporarily, we fixed this by adding a sleep, but the correct fix involves calling, in case of C programs, `daemon()`, `pidfile_open()` etc.
+
+Quite a few nights were lost on this one.  There are more such stories when we added monitoring (via monit) for these programs, but you can well imagine them already.
