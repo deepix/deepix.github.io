@@ -1,0 +1,74 @@
+---
+layout: post
+title: ps | grep is broken on FreeBSD
+tags: ps grep freebsd shell
+---
+
+It is true.  Even on the latest FreeBSD 11.0 (I checked the source tree).
+
+`ps | grep procName` can fail.
+
+`$(ps -p pid)` can fail.
+
+`ps` itself on a non-interactive shell can fail.
+
+They can fail if _procName_ comes somewhere after 79 characters
+(e.g. /abc/def/ghi/.../procName).
+
+Or if you're using `ps -o comm=` and trying to match against a command
+line, it can fail if the command line became too long.
+
+I looked up the source code for FreeBSD (8.4) `ps`, and here it is:
+
+{% highlight C %}
+/* ... */
+else if ((ioctl(STDOUT_FILENO, TIOCGWINSZ, (char *)&ws) == -1 &&
+    ioctl(STDERR_FILENO, TIOCGWINSZ, (char *)&ws) == -1 &&
+    ioctl(STDIN_FILENO,  TIOCGWINSZ, (char *)&ws) == -1) ||
+    ws.ws_col == 0)
+        termwidth = 79;
+{% endhighlight %}
+
+What that's saying is: if you're not on a terminal, or if your system
+is unable to tell us how wide your terminal is, then we'll assume your
+terminal is 79 characters wide!
+
+I wrote a program to test when the `ioctl()` above returns non-zero.
+It does if:
+
+* You're piping `ps` to another program, say `grep`
+* You're running a non-interactive shell (e.g. over ssh: Ansible!)
+
+Shouldn't we assume _unlimited_ width, if we're not really writing to
+a terminal?  Go figure.
+
+### The fix
+
+Anyway, the fix is: Use the `-w` option.  TWICE.  So it is actually:
+`-ww`.  Unless you want your terminal to only go up from 79 to 131
+characters.  I'm not kidding!
+
+{% highlight C %}
+    case 'w':
+        if (wflag)
+            termwidth = UNLIMITED;
+        else if (termwidth < 131)
+            termwidth = 131;
+        wflag++;
+        break;
+{% endhighlight C %}
+
+So, please use: `ps -ww | grep procName`.  Thank you.
+
+### What about Linux and Mac?
+
+Both of these systems behave OK.  Linux gets `ps` from _procps_, which
+has this piece of code:
+
+{% highlight C %}
+142   if(!isatty(STDOUT_FILENO)) screen_cols = OUTBUF_SIZE;
+{% endhighlight %}
+
+The `ps` on Mac works as expected, although the man page says it's
+derived from BSD.  Did Steve Jobs run into it and then get it fixed?
+;-)
