@@ -18,6 +18,8 @@ They can fail if _procName_ comes somewhere after 79 characters
 Or if you're using `ps -o comm=` and trying to match against a command
 line, it can fail if the command line became too long.
 
+### 79 ought to be enough
+
 I looked up the source code for FreeBSD (8.4) `ps`, and here it is:
 
 {% highlight C %}

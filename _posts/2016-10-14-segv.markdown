@@ -1,0 +1,99 @@
+---
+layout: post
+title: Program crashes, only in 64-bit mode
+tags: amd64 gcc c x86 asm
+---
+
+This is a story of a program that worked, until it broke on a 64-bit platform.
+
+Consider this 1-line code:
+
+{% highlight C %}
+printf("error: %s\n", strerror(errno));
+{% endhighlight %}
+
+This code can fail mysteriously with a `Segmentation fault` on 64-bit
+platforms, if you do not include the header _unistd.h_.  The compiler
+does not complain about a missing prototype for _strerror()_ if you do
+not include that header.<sup>1</sup>  Instead it silently assumes the function
+returns an `int`.
+
+The generated assembly<sup>2</sup> can explain things a bit better:
+
+{% highlight asm %}
+call    __error
+movl    (%rax), %edi
+movl    $0, %eax
+call    strerror
+movl    %eax, %esi
+movl    $.LC0, %edi
+movl    $0, %eax
+call    printf
+movl    $0, %eax
+{% endhighlight %}
+
+The interesting part is in the line right after `call strerror`.  The
+`movl` copies the contents of EAX register to ESI.<sup>3</sup> But
+guess what?  _strerror()_ returns a memory address, and the address is
+64 bits.  But EAX register is only 32 bits wide!  The correct
+register would be RAX.  RAX consists of EAX and an additional
+higher-order 32 bits.
+
+This is because the compiler _assumed_ that _strerror()_ returns an
+`int`, which is 32 bits wide on amd64 platform.
+
+A quick run of the program under `gdb` reveals the state of the
+registers.<sup>4</sup>
+
+
+Before the copy:
+
+```
+rax            0x800874100      34368602368
+...
+rsi            0x800740b43      34367343427
+```
+
+After the copy:
+
+```
+rax            0x800874100      34368602368
+...
+rsi            0x874100 8864000
+```
+
+Note how only the lower 32 bits have been copied from RAX to RSI.
+This is not a valid address, so when _printf()_ tries to look it up,
+it fails.
+
+We can try the same program on a 32-bit system and it
+works.<sup>5</sup> The reason is that an `int` and a memory address
+(_pointer_) are both 32 bits wide there.  The generated assembly for
+i386 confirms:
+
+{% highlight asm %}
+call    __error
+movl    (%eax), %eax
+movl    %eax, (%esp)
+call    strerror
+movl    %eax, 4(%esp)
+movl    $.LC0, (%esp)
+call    printf
+{% endhighlight %}
+
+_strerror()_ returned a 32-bit address on EAX, and all of it went to
+the stack as an argument for _printf()_. <sup>6</sup>
+
+On amd64 platform, the calling convention is to put the arguments of a
+function on to RDI, RSI, RDX, RCX.
+
+*Footnotes:*
+
+1. gcc 4.2 on FreeBSD 8.4.  It does generate a warning with `-Wall` option.
+2. `gcc -S` command saves generated assembly in a `.s` file.
+3. The amd64 convention is to pass our two function arguments in RDI, RSI
+registers.
+4. Under `gdb`, use `nexti` and `info reg` commands.
+5. On gcc under amd64, use `gcc -m32` to specify a 32-bit target.
+6. The i386 convention is to push function arguments onto the process
+   stack.
