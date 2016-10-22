@@ -1,0 +1,164 @@
+---
+layout: post
+title: Resetting a TCP connection and SO_LINGER
+tags: tcp freebsd networking
+---
+
+Can you quickly close a TCP connection by sending a reset ("RST") packet?
+
+Calling `close()` usually starts an orderly shutdown, via a "FIN"
+packet.  This means the system has to go through the full TCP shutdown
+sequence, where it has to get back an ACK, and a FIN from the other
+end also, which itself needs an ACK (called _LAST_ACK_, quite
+appropriately).
+
+So: How can you send a reset and get rid of the connection in one shot?
+
+### Using linger option to reset
+
+Here's what I found on FreeBSD 8.4, based on what I see in the kernel.
+
+1. Set `SO_LINGER` option on the socket, with a linger interval of zero.
+2. Call `close()`.
+
+In C, you just need these lines to set up the socket:
+
+{% highlight C %}
+struct linger sl;
+sl.l_onoff = 1;		/* non-zero value enables linger option in kernel */
+sl.l_linger = 0;	/* timeout interval in seconds */
+setsockopt(sockfd, SOL_SOCKET, SO_LINGER, &sl, sizeof(sl));
+{% endhighlight %}
+
+Here is the relevant kernel code that gets executed, from
+`netinet/tcp_usrreq.c`.  The function is `tcp_disconnect()`:
+
+{% highlight C %}
+    /* tcp_drop() sends a RST packet on established connections */
+1587         } else if ((so->so_options & SO_LINGER) && so->so_linger == 0) {
+1588                 tp = tcp_drop(tp, 0);
+1589                 KASSERT(tp != NULL,
+1590                     ("tcp_disconnect: tcp_drop() returned NULL"));
+1591         }
+{% endhighlight %}
+
+### Sample traces
+
+I wrote a simple program to connect to a server, set the above
+`SO_LINGER` option with linger interval of 0, and then close.  Here is
+the packet trace, edited to focus on TCP flags.
+
+```
+12.828218 IP clt.59784 > svr.http: Flags [S], seq 2974233491, ... length 0
+12.828273 IP svr.http > clt.59784: Flags [S.], seq 3927686263, ack 2974233492, ... length 0
+12.828312 IP clt.59784 > svr.http: Flags [.], ack 1, ... length 0
+12.828324 IP clt.59784 > svr.http: Flags [R.], seq 1, ack 1, ... length 0
+```
+
+Note the abrupt close via reset ('R' flag).
+
+Here is a trace _without_ `SO_LINGER` option, again, trimmed for
+clarity.
+
+```
+32.812991 IP clt.16575 > svr.http: Flags [S], seq 2769061407, ... length 0
+32.813092 IP svr.http > clt.16575: Flags [S.], seq 1785234162, ack 2769061408, ... length 0
+32.813110 IP clt.16575 > svr.http: Flags [.], ack 1, ... length 0
+32.813786 IP clt.16575 > svr.http: Flags [F.], seq 1, ack 1, ... length 0
+32.813843 IP svr.http > clt.16575: Flags [.], ack 2, ... length 0
+32.814907 IP svr.http > clt.16575: Flags [F.], seq 1, ack 2, ... length 0
+32.815107 IP clt.16575 > svr.http: Flags [.], ack 2, ... length 0
+```
+
+Note the extra packets, and also the FIN packets ('F' flag) and their
+acknowledgments ('.' flag).
+
+### What is SO_LINGER?
+
+The remaining part of this post is about `SO_LINGER`.  Let us review
+the documentation:
+
+> SO_LINGER controls the action taken when unsent messages are queued on
+socket and a close(2) is performed.  If the socket promises reliable
+delivery of data and SO_LINGER is set, the system will block the process
+on the close(2) attempt until it is able to transmit the data or until it
+decides it is unable to deliver the information (a timeout period, termed
+the linger interval, is specified in seconds in the setsockopt() system
+call when SO_LINGER is requested).
+
+From the man page, it seems as if the system waits only for the
+duration of linger interval to drain the data.  But it turns out to be
+different, as we will see.
+
+The relevant source code is in `uipc_socket.c`, function `soclose()`:
+
+{% highlight C %}
+689    if (so->so_options & SO_LINGER) {
+               /* ... */
+693            while (so->so_state & SS_ISCONNECTED) {
+694                error = tsleep(&so->so_timeo,
+695                               PSOCK | PCATCH, "soclos", so->so_linger * hz);
+696                               if (error)
+697                                   break;
+698            }
+699    }
+{% endhighlight %}
+
+`tsleep()` is documented in
+[sleep(9)](https://www.freebsd.org/cgi/man.cgi?query=msleep&apropos=0&sektion=0&manpath=FreeBSD+8.4-RELEASE&arch=default&format=html).
+
+It is a bit tricky to exercise `SO_LINGER`, but not impossible.
+
+I wrote a client program that set linger timeout to 5 seconds, put
+90000 bytes of data to send via TCP, called `close()`, and then went
+to sleep.  I also wrote a server program that accepted a connection
+and then went to sleep for 15 seconds.
+
+Here is the trace:
+
+```
+35:52.281654 IP clt.53582 > svr.5000: Flags [S], seq 125928674, ... length 0
+35:52.281703 IP svr.5000 > clt.53582: Flags [S.], seq 1941085557, ack 125928675, ... length 0
+35:52.281716 IP clt.53582 > svr.5000: Flags [.], ack 1, ... length 0
+35:52.281744 IP clt.53582 > svr.5000: Flags [P.], ack 1, ... length 9
+35:52.282547 IP clt.53582 > svr.5000: Flags [.], ack 1, ... length 14336
+35:52.282558 IP svr.5000 > clt.53582: Flags [.], ack 14346, ... length 0
+35:52.282597 IP clt.53582 > svr.5000: Flags [P.], ack 1, ... length 1
+35:52.283357 IP clt.53582 > svr.5000: Flags [.], ack 1, ... length 14336
+35:52.283369 IP svr.5000 > clt.53582: Flags [.], ack 28683, ... length 0
+35:52.283406 IP clt.53582 > svr.5000: Flags [P.], ack 1, ... length 1
+35:52.284175 IP clt.53582 > svr.5000: Flags [.], ack 1, ... length 14336
+35:52.284187 IP svr.5000 > clt.53582: Flags [.], ack 43020, ... length 0
+35:52.284226 IP clt.53582 > svr.5000: Flags [P.], ack 1, ... length 1
+35:52.285030 IP clt.53582 > svr.5000: Flags [.], ack 1, ... length 14336
+35:52.285041 IP svr.5000 > clt.53582: Flags [.], ack 57357, ... length 0
+35:52.285079 IP clt.53582 > svr.5000: Flags [P.], ack 1, ... length 1
+35:52.379062 IP svr.5000 > clt.53582: Flags [.], ack 57358, ... length 0
+35:57.379119 IP clt.53582 > svr.5000: Flags [.], ack 1, ... length 14320
+35:57.479101 IP svr.5000 > clt.53582: Flags [.], ack 71678, win 0, ... length 0
+36:02.479146 IP clt.53582 > svr.5000: Flags [.], ack 1, ... length 1
+36:02.479192 IP svr.5000 > clt.53582: Flags [.], ack 71679, win 0, ... length 0
+36:07.290761 IP svr.5000 > clt.53582: Flags [P.], ack 71679, win 0, ... length 18
+36:07.290787 IP clt.53582 > svr.5000: Flags [R], seq 126000353, win 0, length 0
+```
+
+On the client, the `close()` call returns the following `EWOULDBLOCK`
+as expected:
+
+```
+close: Resource temporarily unavailable
+```
+
+The socket wakes up every 5 seconds (our linger interval), trying to
+drain remaining data.  Note that the server buffers are exhausted as
+evident by the zero window advertised at 36:02 and 36:07.  Finally, at
+36:07, the server sends some response, but because our client
+application is closed, the system abruptly resets the connection.
+
+When I tried increasing the sleep time on the server, the client
+continued to attempt to drain every 5 seconds.
+
+Even though the server application is asleep, the server system is
+able to accept 71678 bytes of data in its receive buffers before
+advertising empty space.  It is the remaining unsent data on the
+client that triggered the 'linger' option.
