@@ -88,7 +88,9 @@ call when SO_LINGER is requested).
 
 From the man page, it seems as if the system waits only for the
 duration of linger interval to drain the data.  But it turns out to be
-different, as we will see.
+slightly different, as we will see.  The _user application_ is blocked
+until the linger interval, but the OS continues to try to drain the
+data beyond that.
 
 The relevant source code is in `uipc_socket.c`, function `soclose()`:
 
@@ -110,56 +112,98 @@ The relevant source code is in `uipc_socket.c`, function `soclose()`:
 It is a bit tricky to exercise `SO_LINGER`, but not impossible.  In
 fact, this is how I tried to understand the linger option:
 
-I wrote a client program that set linger timeout to 5 seconds, put
-90000 bytes of data to send via TCP, called `close()`, and then went
-to sleep.  I also wrote a server program that accepted a connection
-and then went to sleep for 15 seconds.
+I wrote a client program that sets linger timeout to 5 seconds, puts
+90001 bytes of data to send via TCP, calls `close()`, and then exits.
+I also wrote a server program that accepts a connection and then goes
+to sleep for 30 seconds, and then reads all the remaining data.  This
+simulates unsent data on the client at the time of invoking `close()`.
 
 Here is the trace:
 
 ```
-35:52.281654 IP clt.53582 > svr.5000: Flags [S], seq 125928674, ... length 0
-35:52.281703 IP svr.5000 > clt.53582: Flags [S.], seq 1941085557, ack 125928675, ... length 0
-35:52.281716 IP clt.53582 > svr.5000: Flags [.], ack 1, ... length 0
-35:52.281744 IP clt.53582 > svr.5000: Flags [P.], ack 1, ... length 9
-35:52.282547 IP clt.53582 > svr.5000: Flags [.], ack 1, ... length 14336
-35:52.282558 IP svr.5000 > clt.53582: Flags [.], ack 14346, ... length 0
-35:52.282597 IP clt.53582 > svr.5000: Flags [P.], ack 1, ... length 1
-35:52.283357 IP clt.53582 > svr.5000: Flags [.], ack 1, ... length 14336
-35:52.283369 IP svr.5000 > clt.53582: Flags [.], ack 28683, ... length 0
-35:52.283406 IP clt.53582 > svr.5000: Flags [P.], ack 1, ... length 1
-35:52.284175 IP clt.53582 > svr.5000: Flags [.], ack 1, ... length 14336
-35:52.284187 IP svr.5000 > clt.53582: Flags [.], ack 43020, ... length 0
-35:52.284226 IP clt.53582 > svr.5000: Flags [P.], ack 1, ... length 1
-35:52.285030 IP clt.53582 > svr.5000: Flags [.], ack 1, ... length 14336
-35:52.285041 IP svr.5000 > clt.53582: Flags [.], ack 57357, ... length 0
-35:52.285079 IP clt.53582 > svr.5000: Flags [P.], ack 1, ... length 1
-35:52.379062 IP svr.5000 > clt.53582: Flags [.], ack 57358, ... length 0
-35:57.379119 IP clt.53582 > svr.5000: Flags [.], ack 1, ... length 14320
-35:57.479101 IP svr.5000 > clt.53582: Flags [.], ack 71678, win 0, ... length 0
-36:02.479146 IP clt.53582 > svr.5000: Flags [.], ack 1, ... length 1
-36:02.479192 IP svr.5000 > clt.53582: Flags [.], ack 71679, win 0, ... length 0
-36:07.290761 IP svr.5000 > clt.53582: Flags [P.], ack 71679, win 0, ... length 18
-36:07.290787 IP clt.53582 > svr.5000: Flags [R], seq 126000353, win 0, length 0
+# connection open
+09:41:15.940732 IP clt.44145 > svr.5000: Flags [S], seq 4078427161, win 65535, length 0
+15.940780 IP svr.5000 > clt.44145: Flags [S.], seq 3774371314, ack 4078427162, win 65535, length 0
+15.940797 IP clt.44145 > svr.5000: Flags [.], ack 1, win 8960, length 0
+# initial data push, server asleep but system accepts data up to socket buffer
+15.940832 IP clt.44145 > svr.5000: Flags [P.], ack 1, win 8960, length 9
+15.941616 IP clt.44145 > svr.5000: Flags [.], ack 1, win 8960, length 14336
+15.941628 IP svr.5000 > clt.44145: Flags [.], ack 14346, win 7166, length 0
+15.941684 IP clt.44145 > svr.5000: Flags [P.], ack 1, win 8960, length 1
+15.942466 IP clt.44145 > svr.5000: Flags [.], ack 1, win 8960, length 14336
+15.942479 IP svr.5000 > clt.44145: Flags [.], ack 28683, win 5374, length 0
+15.942518 IP clt.44145 > svr.5000: Flags [P.], ack 1, win 8960, length 1
+15.943301 IP clt.44145 > svr.5000: Flags [.], ack 1, win 8960, length 14336
+15.943318 IP svr.5000 > clt.44145: Flags [.], ack 43020, win 3582, length 0
+15.943359 IP clt.44145 > svr.5000: Flags [P.], ack 1, win 8960, length 1
+15.944146 IP clt.44145 > svr.5000: Flags [.], ack 1, win 8960, length 14336
+15.944163 IP svr.5000 > clt.44145: Flags [.], ack 57357, win 1790, length 0
+15.944204 IP clt.44145 > svr.5000: Flags [P.], ack 1, win 8960, length 1
+16.040862 IP svr.5000 > clt.44145: Flags [.], ack 57358, win 1790, length 0
+# trying to drain after linger interval
+21.040918 IP clt.44145 > svr.5000: Flags [.], ack 1, win 8960, length 14320
+# server buffer full
+21.140894 IP svr.5000 > clt.44145: Flags [.], ack 71678, win 0, length 0
+# client probes after every linger interval
+26.140943 IP clt.44145 > svr.5000: Flags [.], ack 1, win 8960, length 1
+26.141008 IP svr.5000 > clt.44145: Flags [.], ack 71679, win 0, length 0
+31.140992 IP clt.44145 > svr.5000: Flags [.], ack 1, win 8960, length 1
+31.141056 IP svr.5000 > clt.44145: Flags [.], ack 71680, win 0, length 0
+36.141022 IP clt.44145 > svr.5000: Flags [.], ack 1, win 8960, length 1
+36.141091 IP svr.5000 > clt.44145: Flags [.], ack 71681, win 0, length 0
+41.141102 IP clt.44145 > svr.5000: Flags [.], ack 1, win 8960, length 1
+41.141154 IP svr.5000 > clt.44145: Flags [.], ack 71681, win 0, length 0
+# server wakes up, reads buffered data
+45.951247 IP svr.5000 > clt.44145: Flags [.], ack 71681, win 3601, length 0
+# client drains rest of the data, closes connection
+45.951317 IP clt.44145 > svr.5000: Flags [.], ack 1, win 8960, length 14336
+45.951331 IP clt.44145 > svr.5000: Flags [FP.], seq 86017:90001, ack 1, win 8960, length 3984
+# server acks, opens window
+45.951345 IP svr.5000 > clt.44145: Flags [.], ack 90002, win 4244, length 0
+45.951419 IP svr.5000 > clt.44145: Flags [.], ack 90002, win 7846, length 0
+46.008793 IP svr.5000 > clt.44145: Flags [.], ack 90002, win 8960, length 0
+# socket already closed at client, so tear down connection with a reset
+46.008835 IP clt.44145 > svr.5000: Flags [R], seq 4078517163, win 0, length 0
 ```
 
 On the client, the `close()` call returns the following `EWOULDBLOCK`
-as expected:
+as expected, but note how the program is blocked until 5 seconds later:
+
 
 ```
+closing, time now: Sat Oct 22 09:41:15 PDT 2016
 close: Resource temporarily unavailable
+exiting, time now: Sat Oct 22 09:41:20 PDT 2016
 ```
 
 The socket wakes up every 5 seconds (our linger interval), trying to
 drain remaining data.  Note that the server buffers are exhausted as
-evident by the zero window advertised at 36:02 and 36:07.  Finally, at
-36:07, the server sends some response, but because our client
-application is closed, the system abruptly resets the connection.
-
-When I tried increasing the sleep time on the server, the client
-continued to attempt to drain every 5 seconds.
+evident by the zero window advertised.  Finally, the server reads up
+the remaining data and the connection is closed with a reset because
+the application has exited.
 
 Even though the server application is asleep, the server system is
 able to accept 71678 bytes of data in its receive buffers before
 advertising empty space.  It is the remaining unsent data on the
-client that triggered the 'linger' option.
+client that triggers the 'linger' option.
+
+I tried a few other combinations with my test programs to see how
+`SO_LINGER` behaves:
+
+* If client program is still running, then the OS keeps the connection
+open and waits for the server to send a FIN from its end.
+* If the server wakes up before the linger interval, then the program
+returns before the linger interval.
+* If this is a non-blocking socket, `close()` does not block, but the
+  system still tries to drain data.
+
+So, what does this all mean?
+
+* Use `SO_LINGER` with linger interval of zero to send a reset
+  immediately, whether your socket is blocking or non-blocking.
+* Use `SO_LINGER` with non-zero linger interval to block your program
+  until that time to send the data.  It can wake up before that if it
+  is able to drain the data.  If your socket is non-blocking, it
+  returns immediately but the OS will still try to drain the data.
+* All of this applies only when `l_onoff` field in the `linger`
+  structure is non-zero.
