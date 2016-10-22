@@ -107,7 +107,8 @@ The relevant source code is in `uipc_socket.c`, function `soclose()`:
 `tsleep()` is documented in
 [sleep(9)](https://www.freebsd.org/cgi/man.cgi?query=msleep&apropos=0&sektion=0&manpath=FreeBSD+8.4-RELEASE&arch=default&format=html).
 
-It is a bit tricky to exercise `SO_LINGER`, but not impossible.
+It is a bit tricky to exercise `SO_LINGER`, but not impossible.  In
+fact, this is how I tried to understand the linger option:
 
 I wrote a client program that set linger timeout to 5 seconds, put
 90000 bytes of data to send via TCP, called `close()`, and then went
