@@ -4,7 +4,8 @@ title: Resetting a TCP connection and SO_LINGER
 tags: tcp freebsd networking
 ---
 
-Can you quickly close a TCP connection by sending a reset ("RST") packet?
+Can you quickly close a TCP connection in your program by sending a
+reset ("RST") packet?
 
 Calling `close()` usually starts an orderly shutdown, via a "FIN"
 packet.  This means the system has to go through the full TCP shutdown
@@ -196,6 +197,11 @@ open and waits for the server to send a FIN from its end.
 returns before the linger interval.
 * If this is a non-blocking socket, `close()` does not block, but the
   system still tries to drain data.
+
+I've posted the test programs: [server](files/linsvr.c),
+[client](files/linclt.c).
+
+### To linger or not
 
 So, what does this all mean?
 
