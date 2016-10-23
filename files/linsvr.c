@@ -74,6 +74,8 @@ int main(int argc, char *argv[])
 		if (n < 0) {
 			perror("read");
 			exit(1);
+		} else if (n == 0) {
+			break;
 		}
 	}
 
