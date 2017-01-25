@@ -72,46 +72,4 @@ some file, but that file was not really accessible, and in its place
 was sitting an empty file that the app never wrote to.  What's worse,
 disk usage would also grow until I killed the app.
 
-OK, what's the solution to this mess?  Syslog!
-
-### Syslog to the rescue
-
-The correct way to solve the above problem is to use
-[syslogd](https://www.freebsd.org/cgi/man.cgi?query=syslogd&apropos=0&sektion=8&manpath=FreeBSD+8.4-RELEASE&arch=default&format=html).
-You should replace the redirect with a pipe to
-[logger](https://www.freebsd.org/cgi/man.cgi?query=logger&apropos=0&sektion=0&manpath=FreeBSD+8.4-RELEASE&arch=default&format=html)
-as follows.
-
-```
-myapp | logger
-```
-
-In our case, our application was a daemon that would never exit.  The
-exact command sequence turns out to be:
-
-```
-nohup myapp | nohup logger -i -t myapp &
-```
-
-In addition, there also needs to be two lines in `/etc/syslog.conf`,
-so that syslogd will route the logs to the correct log file:
-
-```
-!myapp
-*.*     /var/log/myapp.log
-```
-
-If the lines above look weird, you should consult the
-[syslog.conf](https://www.freebsd.org/cgi/man.cgi?query=syslog.conf&apropos=0&sektion=5&manpath=FreeBSD+8.4-RELEASE&arch=default&format=html)
-manual.
-
-Finally, the log rotation itself is done via an entry in
-`/etc/newsyslog.conf` like this:
-
-```
-# logfilename          [owner:group]    mode count size when  flags [/pid_file] [sig_num]
-/var/log/myapp.log        appuser:      644     10      1000    *       GZ
-```
-
-For additional information, see the FreeBSD handbook on
-[configuring system logging](https://www.freebsd.org/doc/handbook/configtuning-syslog.html).
+OK, what's the solution to this mess?  [Syslog](/2017/01/24/logrotate.html)!
