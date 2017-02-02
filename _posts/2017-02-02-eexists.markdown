@@ -8,10 +8,10 @@ tags: python
 
 Can you see the problem with this code?  It comes from Ansible, v2.1.1.0.
 
-```
+{% highlight python %}
 if not os.path.exists(value):
      os.makedirs(value, 0o700)
-```
+{% endhighlight %}
 
 It's quite straightforward.  It checks if a directory path exists.  If
 it does not, then it creates the directory path, similar to `mkdir
@@ -72,7 +72,7 @@ for glory).
 
 For the sake of completion, here is the correct code:
 
-```
+{% highlight python %}
 import os
 import errno
 if not os.path.exists(value):
@@ -81,5 +81,4 @@ if not os.path.exists(value):
     except OSError as e:
         if e.errno != errno.EEXIST:
             raise
-
-```
+{% endhighlight %}

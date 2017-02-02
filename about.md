@@ -12,7 +12,7 @@ networking, and big data.  I have extensive working knowledge of C and
 Unix.  I also understand Web networking very well, because the product
 I worked for is a network load balancer at HTTP layer.
 
-Since last couple years, I have been building a data and analytics
+For last couple years, I have been building a data and analytics
 pipeline.  This has led me towards distributed systems and big data
 ecosystems.  These days I spend my time working with Ansible, Hadoop,
 Spark, Python and Golang.
