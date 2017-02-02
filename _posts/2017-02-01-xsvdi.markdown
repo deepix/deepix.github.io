@@ -1,0 +1,142 @@
+---
+layout: post
+title: Getting rid of unused virtual disks on XenServer
+tags: xenserver bash
+---
+
+A continuous test server I'd set up had stopped working.  The
+XenServer on which it was running had a 1TB disk: _and it was full_.
+What's going on?
+
+## When destroy does not destroy everything
+
+My test would provision a new virtual machine (VM), run its test, and
+then delete the VM.  I used `xe vm-destroy` to get rid of the VM.
+However, turns out this command does not delete the virtual hard disk
+associated with the VM!  The correct command is:
+
+```
+xe vm-uninstall force=true uuid=[VM_UUID]
+```
+
+But what if you've already made this mistake?  There is no built-in
+command to show you such orphan disks.  I had to spend half a day
+understanding XenServer abstractions, which is a veritable alphabet
+soup: VDI, VHD, VBD, PBD, SR ...
+
+## Some terminology
+
+Let me simplify some of those terms, because we'll have to work with
+them.
+
+### SR
+
+Let's start with SR.  An SR is a storage location for the XenServer.
+It could be a local hard drive, an NFS mount, a DVD, and so on.  SR
+stands for "Storage Repository".  Here is a sample SR from `xe sr-list`:
+
+```
+uuid ( RO)                : 6d2685a4-7783-ec05-a1c1-aa2fe2e4891e
+          name-label ( RW): Local storage
+    name-description ( RW):
+                host ( RO): xs.eng.example.com
+                type ( RO): ext
+        content-type ( RO): user
+```
+
+### VDI
+
+What is a VDI?  When you create a virtual machine, you can attach a
+"virtual hard disk".  This is a file system on the VM, but it is
+stored as a flat file on the underlying controlling operating system
+(_Dom0_ in Xen parlance).  The file is a .vhd file.
+
+A VDI is a wrapper for a .vhd file (there are other possible formats),
+and is what you operate on.  You never directly work with .vhd files.
+VDI stands for "Virtual Disk Image".  Here is a sample VDI from `xe
+vdi-list`:
+
+```
+uuid ( RO)                : c701a2f3-b5b2-442b-a118-5e9e89c37a26
+          name-label ( RW): ubuntu-trusty-disk-image
+    name-description ( RW): Ubuntu Trusty Disk Image
+             sr-uuid ( RO): 6d2685a4-7783-ec05-a1c1-aa2fe2e4891e
+        virtual-size ( RO): 128849018880
+            sharable ( RO): false
+           read-only ( RO): false
+```
+
+The UUID we see above becomes the name of the .vhd file that actually
+stores the virtual disk content:
+
+```
+# ls -l c701a2f3-b5b2-442b-a118-5e9e89c37a26.vhd
+-rw-r--r-- 1 root root 125865009664 Feb  1 19:15 c701a2f3-b5b2-442b-a118-5e9e89c37a26.vhd
+```
+
+You may notice that the file is actually smaller than the size listed
+in the VDI.  This is a feature, not a bug.  The file starts out small
+and grows as we fill in the disk.
+
+### VBD
+
+Also, note that the VDI has no information on which VM it belongs to.
+Until now, we're only looking at an independent virtual disk file.
+
+That is where the VBD comes in.  A VBD provides additional metadata
+for XenServer to connect a VDI with a VM: e.g., What is the name of
+the VM that uses this (virtual) disk?  VBD stands for "Virtual Block
+Device".  Here is a sample VBD from `xe vbd-list`:
+
+```
+uuid ( RO)             : bb8ecebe-bffe-316d-415f-437f05bacc88
+          vm-uuid ( RO): ecce131d-5848-8ee4-e490-3d595ddcb2fe
+    vm-name-label ( RO): ubuntu-trusty
+         vdi-uuid ( RO): c701a2f3-b5b2-442b-a118-5e9e89c37a26
+            empty ( RO): false
+           device ( RO): xvda
+```
+
+## Finding orphan disks
+
+OK, back to the problem at hand.  So we want to find all the virtual
+disks that do not have a corresponding VM, because the VM was, uhm,
+destroyed.
+
+First, we list all the virtual disks known to the XenServer, by
+executing the following command on Dom0:
+
+```
+xe vdi-list sr-uuid=$sr_uuid params=uuid managed=true
+```
+
+You can obtain the ID for the storage that is running full via `xe
+sr-list`, as shown earlier.
+
+Next, for each virtual disk listed above, we check if there exists a
+corresponding VM.  The VBD is a mapping from virtual disk to VM, so it
+is the perfect place to look for this information.  If the VBD comes
+back empty, then we're looking at an orphan disk.
+
+```
+xe vbd-list vdi-uuid=$vdi params=vm-name-label
+```
+
+We can then delete such orphan disks via `xe vdi-destroy` command.
+
+### The script
+
+The entire
+[shell script is on my Github](https://raw.githubusercontent.com/deepix/shell-fu/master/orphan_vdi.bash).
+You can run it without any options to see if there are any orphan
+virtual disk files.  For each disk file, it prints either `OK` or
+`DEL`.  The `DEL` files are orphans.
+
+If you run it with `-x` option, the script also _deletes_ orphan files.
+It now prints `DO_DEL` for files it deleted.
+
+## Conclusion
+
+In this problem, the interesting piece is not the script, or even the
+solution.  What's interesting is the technology of virtualization and
+all its intricacies, which we see through the window of Xen.

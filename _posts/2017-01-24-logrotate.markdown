@@ -86,6 +86,12 @@ killall -HUP syslogd
 
 This causes logs with the tag _app_ to be written to app.log.
 
+Note: If you do not already have an app.log, syslog will create it, as
+root.  This means if your application runs under a different user, it
+cannot write to the log.  Create the log file yourself before sending
+the HUP signal to syslogd.
+
+
 ### Rotating the log files
 
 **newsyslog** is a FreeBSD utility that can rotate logs.  Linux users
