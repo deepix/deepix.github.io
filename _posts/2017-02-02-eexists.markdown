@@ -1,0 +1,85 @@
+---
+layout: post
+title: Correct way to create a directory in Python
+tags: python
+---
+
+## A puzzle
+
+Can you see the problem with this code?  It comes from Ansible, v2.1.1.0.
+
+```
+if not os.path.exists(value):
+     os.makedirs(value, 0o700)
+```
+
+It's quite straightforward.  It checks if a directory path exists.  If
+it does not, then it creates the directory path, similar to `mkdir
+-p`.  What could be wrong?
+
+## Atomicity
+
+The problem is that the check and the creation are not atomic.  If two
+Ansible processes are started and the path does not exist, we have a
+race condition.  In other words, someone can create the directory
+between the check for existence and the call to _makedirs()_.  Then,
+_makedirs()_ will fail and throw an exception.  Ansible will exit.
+Your cluster won't come up, etc.
+
+OK, but how big is that window?  You'd be surprised, because I
+actually hit the problem.  Here's the stack to prove it:
+
+```
+Traceback (most recent call last):
+  File "/opt/python/bin/ansible-playbook", line 5, in <module>
+    pkg_resources.run_script('ansible==2.1.1.0', 'ansible-playbook')
+  File "/opt/python/lib/python2.6/site-packages/setuptools-0.6c11-py2.6.egg/pkg_resources.py", line 489, in run_script
+  File "/opt/python/lib/python2.6/site-packages/setuptools-0.6c11-py2.6.egg/pkg_resources.py", line 1207, in run_script
+  File "/opt/python/lib/python2.6/site-packages/ansible-2.1.1.0-py2.6.egg/EGG-INFO/scripts/ansible-playbook", line 44, in <module>
+    import ansible.constants as C
+  File "/opt/python/lib/python2.6/site-packages/ansible-2.1.1.0-py2.6.egg/ansible/constants.py", line 152, in <module>
+    DEFAULT_LOCAL_TMP         = get_config(p, DEFAULTS, 'local_tmp',        'ANSIBLE_LOCAL_TEMP',      '$HOME/.ansible/tmp', istmppath=True)
+  File "/opt/python/lib/python2.6/site-packages/ansible-2.1.1.0-py2.6.egg/ansible/constants.py", line 78, in get_config
+    os.makedirs(value, 0o700)
+  File "/opt/python/lib/python2.6/os.py", line 157, in makedirs
+    mkdir(name, mode)
+OSError: [Errno 17] File exists: '/home/pgxl/.ansible/tmp'
+```
+
+## Python differs from Unix
+
+Python documentation mentions that [_os.makedirs()_ can fail if the
+leaf directory exists](https://docs.python.org/2/library/os.html):
+
+> Raises an error exception if the leaf directory already exists or
+> cannot be created.
+
+This behavior is different from `mkdir -p`,
+[which will never complain](https://linux.die.net/man/1/mkdir) if any
+of the components already exist!
+
+```
+$ mkdir -p /tmp
+$ mkdir /tmp
+mkdir: /tmp: File exists
+$
+```
+
+## The fix
+
+This bug is already fixed in the Ansible tree (there goes my chance
+for glory).
+
+For the sake of completion, here is the correct code:
+
+```
+import os
+import errno
+if not os.path.exists(value):
+    try:
+        os.makedirs(value, 0o700)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
+
+```

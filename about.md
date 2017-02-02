@@ -4,12 +4,21 @@ title: About
 permalink: /about/
 ---
 
-This is the base Jekyll theme. You can find out more info about customizing your Jekyll theme, as well as basic Jekyll usage documentation at [jekyllrb.com](http://jekyllrb.com/)
+Hello, my name is Deepak.  I work as a software engineer at Citrix
+Systems in so-called Silicon Valley.
 
-You can find the source code for the Jekyll new theme at:
-{% include icon-github.html username="jglovier" %} /
-[jekyll-new](https://github.com/jglovier/jekyll-new)
+My technical skillset spans three broad domains: Unix systems, Web
+networking, and big data.  I have extensive working knowledge of C and
+Unix.  I also understand Web networking very well, because the product
+I worked for is a network load balancer at HTTP layer.
 
-You can find the source code for Jekyll at
-{% include icon-github.html username="jekyll" %} /
-[jekyll](https://github.com/jekyll/jekyll)
+Since last couple years, I have been building a data and analytics
+pipeline.  This has led me towards distributed systems and big data
+ecosystems.  These days I spend my time working with Ansible, Hadoop,
+Spark, Python and Golang.
+
+The name of the blog, _Lead, Kindly Byte_, is a pun on [a poem by John
+Newman](http://www.newmanreader.org/works/verses/verse90.html) and my
+name, which means 'Light' in Sanskrit.
+
+You can reach me on e-mail: n.deepak at gmail.com
