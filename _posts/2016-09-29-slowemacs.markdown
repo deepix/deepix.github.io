@@ -1,12 +1,17 @@
 ---
 layout: post
 title: Debugging emacs slowness
-tags: emacs debugging python
+tags: emacs elisp debugging python
 ---
 
-I use Emacs (emerge) while merging files.  Today, when trying to merge some Python code, I found that it was taking exceedingly long time.  It was blank for 5 minutes and counting.
+I use Emacs (emerge) while merging files.  Today, when trying to merge
+some Python code, I found that it was taking exceedingly long time.
+It was blank for 5 minutes and counting.
 
-Googling revealed that one can print a stack trace under such cases, by having the following line in the .emacs file:
+<!--more-->
+
+Googling revealed that one can print a stack trace under such cases,
+by having the following line in the .emacs file:
 
 ```
 (setq debug-on-quit t)

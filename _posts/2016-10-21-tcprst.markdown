@@ -7,6 +7,8 @@ tags: tcp freebsd networking
 Can you quickly close a TCP connection in your program by sending a
 reset ("RST") packet?
 
+<!--more-->
+
 Calling `close()` usually starts an orderly shutdown, via a "FIN"
 packet.  This means the system has to go through the full TCP shutdown
 sequence, where it has to get back an ACK, and a FIN from the other

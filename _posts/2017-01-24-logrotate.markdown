@@ -9,6 +9,8 @@ There is no change to application code.  There is no specialized
 logging library or framework needed.  It works for any language, on
 standard Unix platform.
 
+<!--more-->
+
 ### What is log rotation?
 
 Log files from applications can fill up disks over time.  To prevent

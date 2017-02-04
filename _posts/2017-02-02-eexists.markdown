@@ -1,10 +1,8 @@
 ---
 layout: post
 title: Correct way to create a directory in Python
-tags: python
+tags: python mkdir unix concurrency
 ---
-
-## A puzzle
 
 Can you see the problem with this code?  It comes from Ansible, v2.1.1.0.
 
@@ -16,6 +14,8 @@ if not os.path.exists(value):
 It's quite straightforward.  It checks if a directory path exists.  If
 it does not, then it creates the directory path, similar to `mkdir
 -p`.  What could be wrong?
+
+<!--more-->
 
 ## Atomicity
 

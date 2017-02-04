@@ -1,10 +1,16 @@
 ---
 layout: post
 title: You got too many open files
-tags: python ansible freebsd
+tags: python ansible freebsd posix ipc semaphores
 ---
 
-I'm trying to get Ansible 2.0 working on a custom FreeBSD 8.4 that's running custom Python 2.6. That's like fitting satellite navigation on a vintage car, but it's a different story for another day.
+This is a tale about a hopelessly bad error message.
+
+<!--more-->
+
+I'm trying to get Ansible 2.0 working on a custom FreeBSD 8.4 that's
+running custom Python 2.6. That's like fitting satellite navigation on
+a vintage car, but it's a different story for another day.
 
 ### Errno 23
 
@@ -43,11 +49,15 @@ Hmmm. That looks an easy one to fix.
 * `sysctl kern.maxfiles=50000`. Nope.
 * `sysctl kern.maxprocfiles=50000`. Didn't work either.
 
-I had a demo coming up where I would deploy a cluster with Ansible.  This was starting to give trouble.  I had to get to the bottom of this.
+I had a demo coming up where I would deploy a cluster with Ansible.
+This was starting to give trouble.  I had to get to the bottom of
+this.
 
 ### Entering python
 
-I started by looking in the python library `/var/python/lib/python2.6` for `_multiprocessing` module sources, but couldn't find it. There was a match in dynamic libraries, however:
+I started by looking in the python library `/var/python/lib/python2.6`
+for `_multiprocessing` module sources, but couldn't find it. There was
+a match in dynamic libraries, however:
 
 ```
 $ grep _multiprocessing *
@@ -55,11 +65,15 @@ Binary file lib-dynload matches
 Binary file test matches
 ```
 
-That means it must be in the sources for the python interpreter: that's how it ended up being a compiled, binary library.
+That means it must be in the sources for the python interpreter:
+that's how it ended up being a compiled, binary library.
 
-I opened up python-2.6 sources. A grep showed matches in `Modules/_multiprocessing/semaphore.c`. It was making a system call: `sem_open()`.
+I opened up python-2.6 sources. A grep showed matches in
+`Modules/_multiprocessing/semaphore.c`. It was making a system call:
+`sem_open()`.
 
-Hmmm. So `sem_open()` is failing. I looked up `errno` man page for the number 23 and it was, symbolically, `ENFILE`.
+Hmmm. So `sem_open()` is failing. I looked up `errno` man page for the
+number 23 and it was, symbolically, `ENFILE`.
 
 ```
 23 ENFILE	Too many open files in system.  Maximum number of file descrip-
@@ -67,13 +81,23 @@ Hmmm. So `sem_open()` is failing. I looked up `errno` man page for the number 23
 		an open cannot be satisfied until at least one has been closed.
 ```
 
-Maybe there is a different tuning parameter for IPC file descriptors. That's why the previous commands didn't work?
+Maybe there is a different tuning parameter for IPC file
+descriptors. That's why the previous commands didn't work?
 
 ### Kernel of truth
 
-Down the rabbit hole: now I opened the FreeBSD kernel sources. I first simply tried to list files that had *sem* in their filename. This led me to `kern/sysv_sem.c` and a bunch of weird `sysctl` tunables like `kern.ipc.semmnu`.  But these tunables already had reasonably high values.  Dead end.
+Down the rabbit hole: now I opened the FreeBSD kernel sources. I first
+simply tried to list files that had *sem* in their filename. This led
+me to `kern/sysv_sem.c` and a bunch of weird `sysctl` tunables like
+`kern.ipc.semmnu`.  But these tunables already had reasonably high
+values.  Dead end.
 
-Of course, there's a better way than that. Why not just grep for `sem_open`? Besides, what I wanted was *POSIX semaphores*, not System-V!  I remembered now: Python `configure` script for 2.6 on FreeBSD 8.4 doesn't enable POSIX IPC by default, because it warns, the platform support code is experimental.  I had read it, uncommented it, and then forgot all about it.  Did I run into this problem?
+Of course, there's a better way than that. Why not just grep for
+`sem_open`? Besides, what I wanted was *POSIX semaphores*, not
+System-V!  I remembered now: Python `configure` script for 2.6 on
+FreeBSD 8.4 doesn't enable POSIX IPC by default, because it warns, the
+platform support code is experimental.  I had read it, uncommented it,
+and then forgot all about it.  Did I run into this problem?
 
 OK, progress at last. The following was interesting:
 
@@ -84,7 +108,9 @@ sys/semaphore.h:sem_t *sem_open(const char *, int, …);
 sys/syscall.h:#define SYS_ksem_open 405
 ```
 
-So it seems `sem_open()` is implemented via `ksem_open()` in `kern/uipc_sem.c`.  I opened up `uipc_sem.c` and sure enough, found a tunable:
+So it seems `sem_open()` is implemented via `ksem_open()` in
+`kern/uipc_sem.c`.  I opened up `uipc_sem.c` and sure enough, found a
+tunable:
 
 {% highlight C %}
 if (nsems == p31b_getcfg(CTL_P1003_1B_SEM_NSEMS_MAX) || ksem_dead) {
@@ -95,7 +121,9 @@ if (nsems == p31b_getcfg(CTL_P1003_1B_SEM_NSEMS_MAX) || ksem_dead) {
 
 ### Thirty ought to be enough
 
-Turns out `CTL_P1003_1B_SEM_NSEMS_MAX` corresponds to the sysctl `sem_nsems_max`.  And guess what its default value is?  30!  You read that right, it's 30!
+Turns out `CTL_P1003_1B_SEM_NSEMS_MAX` corresponds to the sysctl
+`sem_nsems_max`.  And guess what its default value is?  30!  You read
+that right, it's 30!
 
 {% highlight C %}
 #ifndef SEM_MAX
@@ -110,12 +138,23 @@ sysctl p1003_1b.nsems_max=300
 
 Magic!  I stopped getting the "too many open files" error.  I tried a
 few more times and never ran into the problem again.  I still haven't
-had a chance to see why `p1003_1b.nsems_max` defaults to 30, but I will stop here for now.
+had a chance to see why `p1003_1b.nsems_max` defaults to 30, but I
+will stop here for now.
 
 ### Afterthought
 
-Looking back at this, I'm amazed at how far away the problem is from the actual cause.  Saying "Too many open files" is certainly not the same as saying "Your configured maximum semaphores limit is too low".  A different errno would have helped.  But then, I was warned the code is experimental.
+Looking back at this, I'm amazed at how far away the problem is from
+the actual cause.  Saying "Too many open files" is certainly not the
+same as saying "Your configured maximum semaphores limit is too low".
+A different errno would have helped.  But then, I was warned the code
+is experimental.
 
-When I first wrote the Ansible playbooks, it was on Linux.  We never thought of running it on FreeBSD, much less its 8.4 version.
+When I first wrote the Ansible playbooks, it was on Linux.  We never
+thought of running it on FreeBSD, much less its 8.4 version.
 
-What really helped a lot here is the open source nature of the entire stack: I had access to python sources, as well as the FreeBSD kernel sources.  All of that was sitting checked in to a single source repository.  It was a matter of couple of hours to get to the bottom of it.  I don't know if I could have pulled this off if I had to call a Customer Support line and open a ticket!
+What really helped a lot here is the open source nature of the entire
+stack: I had access to python sources, as well as the FreeBSD kernel
+sources.  All of that was sitting checked in to a single source
+repository.  It was a matter of couple of hours to get to the bottom
+of it.  I don't know if I could have pulled this off if I had to call
+a Customer Support line and open a ticket!

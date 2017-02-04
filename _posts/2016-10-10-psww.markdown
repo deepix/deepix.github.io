@@ -6,6 +6,8 @@ tags: ps grep freebsd shell
 
 It is true.  Even on the latest FreeBSD 11.0 (I checked the source tree).
 
+<!--more-->
+
 `ps | grep procName` can fail.
 
 `$(ps -p pid)` can fail.

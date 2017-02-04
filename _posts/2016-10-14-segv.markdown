@@ -6,6 +6,8 @@ tags: amd64 gcc c x86 asm
 
 This is a story of a program that worked, until it broke on a 64-bit platform.
 
+<!--more-->
+
 Consider this 1-line code:
 
 {% highlight C %}

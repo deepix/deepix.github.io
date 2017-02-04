@@ -4,10 +4,16 @@ title: Rotating the log makes it empty
 tags: logrotate syslog freebsd
 ---
 
+If you don't do log rotation right, you may have a full hard drive and
+a ghost file.
+
+<!--more-->
+
 Our logs were getting too big, and it was time to have them "rotated":
 phase out older entries and delete the oldest of them all.  I'd
-already found out about [newsyslog.conf](https://www.freebsd.org/cgi/man.cgi?query=newsyslog.conf&apropos=0&sektion=5&manpath=FreeBSD+8.4-RELEASE&arch=default&format=html), and I added a line there to
-rotate my log file.
+already found out about
+[newsyslog.conf](https://www.freebsd.org/cgi/man.cgi?query=newsyslog.conf&apropos=0&sektion=5&manpath=FreeBSD+8.4-RELEASE&arch=default&format=html),
+and I added a line there to rotate my log file.
 
 OK, the log did get rotated, but wait - there's nothing being logged
 now!  This is what I saw in the new log file:

@@ -1,8 +1,14 @@
 ---
 layout: post
 title: Don't hang up on me
-tags: freebsd signal bash sighup
+tags: signals shell unix sighup
 ---
+
+Can you tell me when a shell sends a "HANGUP" signal to a process?
+What happens if there is a pipeline?  What if you prefix this pipeline
+with the "nohup" command?
+
+<!--more-->
 
 In my previous post, I posted a command to log via syslog:
 
@@ -178,4 +184,6 @@ suggestions offered at *StackOverflow.com!*
 
 ### Update: Sep. 30 2016
 
-A colleague pointed out that you can just put the pipeline in a separate script by itself, and then call nohup on the script.  I don't know why I never tried it, but it *did* work.  Oh well.
+A colleague pointed out that you can just put the pipeline in a
+separate script by itself, and then call nohup on the script.  I don't
+know why I never tried it, but it *did* work.  Oh well.

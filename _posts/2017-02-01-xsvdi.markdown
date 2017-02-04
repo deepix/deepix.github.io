@@ -1,12 +1,14 @@
 ---
 layout: post
 title: Getting rid of unused virtual disks on XenServer
-tags: xenserver bash
+tags: xenserver virtualization shell-scripts
 ---
 
 A continuous test server I'd set up had stopped working.  The
 XenServer on which it was running had a 1TB disk: _and it was full_.
 What's going on?
+
+<!--more-->
 
 ## When destroy does not destroy everything
 

@@ -14,7 +14,7 @@ baseurl: "" # the subpath of your site, e.g. /blog
 url: "http://deepix.github.io" # the base hostname & protocol for your site
 # twitter_username: deepix
 github_username:  deepix
-paginate: 3
+excerpt_separator: <!--more-->
 
 # Build settings
 markdown: kramdown
