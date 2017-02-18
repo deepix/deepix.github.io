@@ -5,15 +5,16 @@ permalink: /about/
 ---
 
 Hello, my name is Deepak.  I work as a software engineer at Citrix
-Systems in so-called Silicon Valley.
+Systems, Santa Clara.
 
-My technical skillset spans three broad domains: Unix systems, Web
+My technical skills span three broad domains: Unix systems, Web
 networking, and big data.  I have extensive working knowledge of C and
-Unix.  I also understand Web networking very well, because the product
-I worked for is a network load balancer at HTTP layer.
+Unix.  I also understand Web networking very well, having worked on
+[NetScaler](http://www.netscaler.com/) application load balancer at
+HTTP and TCP layers.
 
-For last couple years, I have been building a data and analytics
-pipeline.  This has led me towards distributed systems and big data
+For the last couple years, I have been building a data and analytics
+pipeline.  This has led me to distributed systems and big data
 ecosystems.  These days I spend my time working with Ansible, Hadoop,
 Spark, Python and Golang.
 

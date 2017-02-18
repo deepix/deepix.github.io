@@ -1,0 +1,202 @@
+---
+layout: post
+title: The program that would not go away
+tags: unix signals fork exec
+---
+
+This post is about a program hang.  The hang was in the Python process
+that was running Ansible scripts.  The problem was hard to debug and
+had me go back to Unix textbook.
+
+<!--more-->
+
+### Quick quiz
+
+This quiz is about Unix signals.
+
+Let's say you've set SIGTERM to be ignored in your program.  You
+invoke a shell script and the script itself invokes, say, python.
+
+Can you quickly tell if you can kill the python process via SIGTERM?
+
+As you might have guessed by now, the answer is _no_.
+
+The signal disposition of your program is carried forward to your
+child and beyond, unless the child program _resets_ it at startup.
+
+## Signals in Unix
+
+Unix allows you to deal with signals in two ways.
+
+ * You can ignore a signal, and the system will not deliver it to you.
+   On the other hand, you can also specify a function that will
+   handle the signal.  The relevant system call is _sigaction()_.
+
+ * You can specify a signal mask: a series of bits that tell the
+   system which signals _not_ to deliver.  The signals are said to be
+   blocked, until a system call is specifically made to _unblock_
+   them.  The relevant system call is _sigprocmask()_.
+
+### Signals across program copies
+
+The crucial question is: what happens to these when you make a copy of
+yourself via *fork*, or load a different program via *exec*?
+
+Here's what happens.
+
+ * If you've asked a signal to be _ignored_, the forked and execed
+ programs will _inherit_ it.
+
+ * If you've set up a _signal handler_, the forked program _retains_
+   this handler, but the exec'ed program _does not_.  (It cannot,
+   because the new program is entirely different code, right?)
+
+ * If you've set up a _signal mask for blocking_, the forked and
+  execed programs will _inherit_ it.
+
+The
+[manual pages](https://www.freebsd.org/cgi/man.cgi?query=sigaction&sektion=2&apropos=0&manpath=FreeBSD+8.4-RELEASE)
+are quite dense about this:
+
+> After a fork(2) or	vfork(2) all signals, the signal mask, the signal
+> stack, and	the restart/interrupt flags are	inherited by the child.
+
+> The execve(2) system call reinstates the default action for all signals
+> which were	caught and resets all signals to be caught on the user stack.
+> Ignored signals remain ignored; the signal	mask remains the same; signals
+> that restart pending system calls continue	to do so.
+
+### Useful commands
+
+_ps_, the standard utility to observe process state, has the following
+flags to check the signal details for a program.  The commands below
+come from FreeBSD, but it will be similar on Linux or Mac OS X.
+
+The output below is quite wide, so you may have to scroll a bit to the
+right.
+
+```
+$ ps axjf -O pending,ignored,blocked
+USER          PID  PPID  PGID   SID JOBC STAT  TT       TIME COMMAND            PID  PENDING  IGNORED  BLOCKED  TT  STAT      TIME COMMAND
+...
+pgxl        27053     1 26638 11566    0 I     ??    0:00.58 /usr/local/bin/p 27053        0 1948d007     5004  ??  I      0:00.58 /usr/local/bin/python -u /va
+...
+```
+
+Note the 3 columns with headers PENDING, IGNORED and BLOCKED.  They
+show which signals are pending delivery to the process, which are
+being ignored by the process, and which have been blocked.
+
+This particular process has no pending signals (0).  It is ignoring
+some signals, as specified by the mask 0x1948d007.  It is also
+blocking some signals, vide the mask 0x5004.
+
+You can decipher the mask by looking at the man page for signal, but
+the easier way is to use the _procstat_ command.  With the -i option,
+it shows which signals are being ignored (I), and with the -j option, it
+shows which signals are being blocked (B).
+
+```
+$ procstat -i 38540
+  PID COMM             SIG     FLAGS
+38540 nsulfd           HUP      -I-
+38540 nsulfd           INT      -I-
+38540 nsulfd           QUIT     -I-
+38540 nsulfd           ILL      ---
+38540 nsulfd           TRAP     ---
+...
+
+$ procstat -j 38540
+  PID    TID COMM             SIG     FLAGS
+38540 101220 nsulfd           HUP      --
+38540 101220 nsulfd           INT      --
+38540 101220 nsulfd           QUIT     -B
+38540 101220 nsulfd           ILL      --
+38540 101220 nsulfd           TRAP     --
+...
+```
+
+## The Ansible problem
+
+With this introduction, I can now analyze the problem I had.  Ansible
+forks a bunch of worker processes and they communicate via a queue.
+When the work is all done, the driver sends them a TERM signal.
+
+But with the above setup of SIGTERM being ignored by some parent
+process which invoked Ansible, they never get the TERM ...  and they
+hang!
+
+I spent a lot of time over the details of Python's multiprocessing,
+decoding Python's call stack via gdb, and of course, reading similar
+Ansible bug reports.  The actual solution came when I noticed that
+another program from the same parent was also not terminating.  A
+sharp colleague of mine connected the dots and thought this might have
+something to do with signal inheritance.  Bingo!
+
+## View from the other side
+
+It is possible to verify some of this behavior from the kernel
+sources.  Here is the relevant code in the implementation of fork() in
+FreeBSD 8.4.  You can see the mask of blocked signals, as well as
+handlers being passed from parent to child.
+
+### fork()
+
+(_kern/fork.c._  Comments mine.)
+{% highlight C %}
+            /* copy signal mask from parent to child */
+547         td2->td_sigmask = td->td_sigmask;
+            /* ... */
+572         if (flags & RFSIGSHARE) {
+                    /* not true for fork() - ignore */
+574         } else {
+                    /* this is a copy from parent to child:
+                     * child inherits the handlers, ignored signals,
+                     * signals okay to be caught, etc.
+                     */
+575                 sigacts_copy(newsigacts, p1->p_sigacts);
+576                 p2->p_sigacts = newsigacts;
+577         }
+{% endhighlight C %}
+
+### exec()
+
+Here is the relevant code in exec(), where the system resets signal
+handlers.
+
+(_kern/kern_sig.c_. Comments mine.)
+{% highlight C %}
+941         ps = p->p_sigacts;
+942         mtx_lock(&ps->ps_mtx);
+            /* go through all the signals the program wants to catch */
+943         while (SIGNOTEMPTY(ps->ps_sigcatch)) {
+                    /* find first signal caught by a handler function */
+944                 sig = sig_ffs(&ps->ps_sigcatch);
+                    /* remove it so that this while loop can end */
+945                 SIGDELSET(ps->ps_sigcatch, sig);
+                    /* if this signal is to be ignored by default ... */
+946                 if (sigprop(sig) & SA_IGNORE) {
+                            /* ... set it to be ignored */
+947                         if (sig != SIGCONT)
+948                                 SIGADDSET(ps->ps_sigignore, sig);
+949                         sigqueue_delete_proc(p, sig);
+950                 }
+                    /* set default action on the signal - handler is gone */
+951                 ps->ps_sigact[_SIG_IDX(sig)] = SIG_DFL;
+952         }
+{% endhighlight C %}
+
+What's interesting about the exec code is what it does _not_ do, and
+therefore what I cannot show:  it does _not_ clear signals that are
+already being ignored (_ps\_sigignore_).  Also, it does _not_ clear
+the signal mask (_td\_sigmask_).
+
+This means both of these remain the same on the exec'ed code!
+
+## More information
+
+There is more to Unix signals than what a blog post can discuss.  For
+a very good treatment of the nuances in a dedicated chapter, I
+recommend the book
+[_Computer Systems: A Programmer's Perspective_](http://csapp.cs.cmu.edu)
+by Bryant and O'Hallaron.
