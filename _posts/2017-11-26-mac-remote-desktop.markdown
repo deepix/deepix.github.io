@@ -32,8 +32,8 @@ troubleshooting.  But the requirements are otherwise minimal:
 
 ### WiFi Router Setup
 
-The IP address your home computer has, say 192.168.1.10, is known as a
-_private address_.  You cannot access it from the internet.  We will
+The IP address your home computer has, say `192.168.1.10`, is known as
+a _private address_.  You cannot access it from the internet.  We will
 fix this.
 
 Additionally, your home computer may get a different IP address from
@@ -52,10 +52,10 @@ Then, consult your manual to do the following (I just browsed through
 all the pages on their Web interface until I found what I wanted):
 
 * Reserve an IP address for your computer.  The router will provide a
-  way to reserve an IP address, say 192.168.1.5, to the hardware (MAC)
+  way to reserve an IP address, say `192.168.1.5`, to the hardware (MAC)
   address of your home computer.
 
-* Set up the router to forward port 22 to 192.168.1.5.
+* Set up the router to forward port `22` to `192.168.1.5`.
 
 * Sign up for a dynamic DNS service (e.g.,
   [no-ip.com](http://no-ip.com/)).  The basic plan is free of charge.
@@ -67,7 +67,7 @@ have not set up the home computer for SSH yet.  We will do that next.
 
 We'll set up your home computer for remote access.
 
-Under System Preferences > Sharing, enable 'Remote Login'.  This
+Under _System Preferences > Sharing_, enable 'Remote Login'.  This
 allows SSH access to your home computer.
 
 No other services are needed.
@@ -106,7 +106,7 @@ The relevant file is `/etc/ssh/sshd_config`.  You can read the
 comments above the configuration statements for more information.
 
 After making these changes, restart the SSH service: uncheck the box
-on System Preferences > Sharing, then check it again.
+on _System Preferences > Sharing_, then check it again.
 
 The steps above will restrict who can access your home computer.  It
 does not prevent flooding your computer with connection attempts.  To
@@ -130,7 +130,7 @@ do this now, but mark it for later.
 
 Keep your home computer updated with Security Updates from Apple.
 
-Finally, go to System Preferences > Energy Saver, check on 'Prevent
+Finally, go to _System Preferences > Energy Saver_, check on 'Prevent
 computer from sleeping automatically when the display is off'.
 Without this, you may find your home computer inaccessible because it
 went to sleep.
@@ -157,7 +157,7 @@ Host some_fancy_name
 Start an SSH session: `ssh some_fancy_name_from_your_config_above`.
 Use your key passphrase to authenticate.
 
-Now open _Screen Sharing_, and connect to _127.0.0.1:5910_.  This should
+Now open _Screen Sharing_, and connect to `127.0.0.1:5910`.  This should
 connect to your home computer via SSH, and from there to the remote
 desktop server running on your home computer.  You should see the login
 screen from your home computer.
