@@ -80,3 +80,8 @@ derived from BSD.  Did Steve Jobs run into it and then get it fixed?
 ### Update Feb 16 2017
 
 I've filed a defect and also uploaded a patch on FreeBSD's bug database: [BUG217159](https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=217159)
+
+### Update Mar 5 2017
+
+This has been accepted into mainline FreeBSD code. [More info.](https://svnweb.freebsd.org/base/head/bin/ps/ps.c?view=log&pathrev=314685)
+
