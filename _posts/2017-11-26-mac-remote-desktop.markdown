@@ -96,14 +96,31 @@ We next harden the SSH server on your home computer for enhanced
 security.
 
 * Disable password-based access
-* Disable PAM authentication
+* Disable system-login authentication
 * Enable host-based authentication
-* Copy your remote network computer's host key
-  (`/etc/ssh/ssh_host_foo_key`) to the known hosts file
-* Ensure that public-key authentication is enabled
+* Copy your remote network computer's host key to the home
+  computer's known hosts file
 
 The relevant file is `/etc/ssh/sshd_config`.  You can read the
 comments above the configuration statements for more information.
+
+The config lines are:
+
+```
+# Disable password-based access
+PasswordAuthentication no
+ChallengeResponseAuthentication no
+UsePAM no
+
+# Enable host-based authentication
+HostbasedAuthentication yes
+IgnoreUserKnownHosts yes
+IgnoreRhosts yes
+```
+
+You can copy your remote network computer's host key in
+`/etc/ssh/ssh_host_foo_key.pub` to the known hosts file
+`/etc/ssh/ssh_known_hosts` on your home computer.
 
 After making these changes, restart the SSH service: uncheck the box
 on _System Preferences > Sharing_, then check it again.
@@ -149,8 +166,6 @@ Host some_fancy_name
     User your_home_mac_user_id
     IdentityFile ~/.ssh/id_rsa_or_something_like_that
     LocalForward 5910 127.0.0.1:5900
-    ControlMaster auto
-    ControlPath ~/.ssh/sockets/%r@%h:%p
     ServerAliveInterval 30
 ```
 
