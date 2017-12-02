@@ -90,7 +90,7 @@ ssh-copy-id home_user_name@yourname.no-ip.com
 ```
 
 Afterwards, ssh again.  Note that you are asked only for your key
-Passphrase.
+passphrase.
 
 We next harden the SSH server on your home computer for enhanced
 security.
@@ -147,10 +147,9 @@ do this now, but mark it for later.
 
 Keep your home computer updated with Security Updates from Apple.
 
-Finally, go to _System Preferences > Energy Saver_, check on 'Prevent
-computer from sleeping automatically when the display is off'.
-Without this, you may find your home computer inaccessible because it
-went to sleep.
+Finally, go to _System Preferences > Energy Saver > Power Adapter_,
+check on 'Wake for Wi-Fi network access'.  Without this, you may
+find your home computer inaccessible because it went to sleep.
 
 ### Remote Desktop Sharing
 
@@ -200,6 +199,6 @@ reams of login attempts within a day of creating a VM.
 ### Closing Words
 
 Those are the steps, as an outline.  Some of the topics above merit
-separate posts by themselves (SSH tunnelling anyone!?), but again,
-I've kept the post focussed on the goal.  I hope it is helpful in that
+separate posts by themselves (SSH tunneling anyone!?), but again,
+I've kept the post focused on the goal.  I hope it is helpful in that
 regard.
