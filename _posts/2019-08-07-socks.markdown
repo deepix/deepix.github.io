@@ -1,0 +1,91 @@
+---
+layout: post
+title: Privacy in today's age with a SOCKS proxy
+tags: privacy networking socks ssh
+---
+
+Say you are at a cafe, and you want to surf the Web.  But the WiFi is
+not secure.  Or say your company lets you bring your laptop, but what
+if its firewall has blocked your favorite website?  Is there no hope,
+besides paying $15 to a VPN provider?
+
+There is, and it costs about $3.50 per month as of this writing.
+
+<!--more-->
+
+### Wear some SOCKS
+
+You see, there is this thing called a "SOCKS proxy".  It acts as a
+middleman between you and a Website.  The SSH server that comes with
+any standard Linux distribution can act as a SOCKS proxy for you.
+Fire up a Linux box on AWS Lightsail (fixed monthly charges), and
+you're pretty much all set.  It's almost too good to be true.
+
+Here is the configuration you need to set on your laptop, under
+`~/.ssh/config`:
+
+```
+Host lightsail
+  Hostname (your_lightsail_ip)
+  User ubuntu
+  IdentityFile (path_to_your_public_key)
+  DynamicForward 1336
+  Compression yes
+```
+
+Next, set your browser to use a SOCKSv5 proxy with the IP address
+127.0.0.1, port 1336.  You can also set it to do DNS resolution for
+you, if you don't want your cafe (or company) to know that you're
+going to, say, jobsearch.com.
+
+You can also set this system-wide.  On Mac, go to Preferences >
+Networking > Advanced > Proxy, and set the SOCKS proxy there.  This
+will let apps like Slack use your proxy.  I set it on both my browser
+and at the system.
+
+If your Lightsail VM is close enough to where you live, the additional
+latency is almost negligible.  I browse the Web fine without any
+problems.
+
+With this setup, the traffic between your laptop and the Lightsail VM
+is fully encrypted.  This means, neither your home WiFi router, nor
+your ISP (or telecom provider, if you're using 4G hotspot) router can
+see what Websites you're visiting.
+
+To confirm that your setup is working, try looking up the location of
+your IP address on Google.  It should show your Lightsail VM location.
+
+### Caveats
+
+There are some caveats worth noting about in this solution.
+
+First, your WiFi (or Ethernet) network should not block traffic to and
+from port 22 (the SSH port).  This is usually not a problem.
+
+Second, Web traffic is still in the plain between the SOCKS proxy and
+the Web server, unless you are visiting a HTTPS Web site.  Stating the
+obvious here. :-) I think it's still much better privacy than the
+default.
+
+Third, you will need to log in to your Lightsail IP address every time
+you open your laptop.  It helps to make your Lightsail IP address
+static (AWS allows this).  This can be an annoyance, but you can
+easily automate it with a cron job that checks every second if port
+1336 is open.  I simply log in manually every time; it doesn't bother
+me much.
+
+Finally, your Linux VM on Lightsail cannot run in its default
+configuration.  It should be hardened for security.  As bare minimum,
+you should do the following on the Lightsail VM:
+
+* SSH has 2-factor authentication from way back, and it's called
+  host-based authentication.  Enable this in `/etc/ssh/sshd_config`
+  and copy your laptop's public key to it.  Disable password-based
+  access.
+* Enable and start the firewall, it's called ufw on Ubuntu.  Open only
+  port 22, and enable rate-limiting on it.
+* Subscribe to security updates for ufw, sshd and Linux.  Enable
+  automatic security updates if possible.
+
+It may be better to use OpenBSD instead of Linux, because of its more
+secure "closed-by-default" configuration.  I'm on Linux, for now.
