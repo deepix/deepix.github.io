@@ -1,2 +1,2 @@
 # deepix.github.io
-A technical website
+A personal website
