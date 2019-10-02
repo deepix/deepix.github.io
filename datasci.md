@@ -44,9 +44,7 @@ MobileNet, Inception v3, AlexNet, VGG16.
 
 The best performing model (MobileNet) had 95% accuracy.
 
-    [Report](https://github.com/deepix/w251finalproject/blob/master/w251_final_project_paper.pdf)
-[Presentation](https://github.com/deepix/w251finalproject/blob/master/W251_Final_Presentation_Deepak_Mike_Roland.pdf)
-(public)
+[Report](https://github.com/deepix/w251finalproject/blob/master/w251_final_project_paper.pdf) [Presentation](https://github.com/deepix/w251finalproject/blob/master/W251_Final_Presentation_Deepak_Mike_Roland.pdf) (public)
 
 ## Private
 
@@ -177,13 +175,13 @@ part of speech in English grammar.  We use a "hidden Markov model"
 
 ### Could we have prevented the Challenger space shuttle accident?
 
-Statistical models say yes: we find that the temperature at the time of launch, it was likely to fail.
+Statistical models say yes: given the temperature at the time of launch, it was likely to fail.
 
 Logistic regression, binomial and binary.  Likelihood-ratio tests (LRTs).  Profile and Wald intervals.  Bootstrap.
 
 [R Notebook](https://github.com/deepix/w271-labs/blob/master/Lab_1/DanielleAdler_CraigFujii_DeepakNagaraj_Lab1.pdf) (private, available upon request)
 
-### Given how retailers place cereal boxes, can we predict where kids' cereals shelves are?
+### Given how retailers place cereal boxes, can we predict where kids' cereals are?
 
 Sugar and sodium were statistically significant, and sweeter cereal
 boxes were likely sitting on the bottom shelves.
@@ -192,7 +190,7 @@ Multinomial logistic regression.  Odds ratios.
 
 [R Notebook](https://github.com/deepix/w271-labs/blob/master/Lab_2/DanielleAdler_CraigFujii_DeepakNagaraj_Lab2.pdf) (private, available upon request)
 
-### Given past e-commerce data, can we forecast sales for the next quarter?
+### Forecasting e-commerce sales, given historical data
 
 We develop a statistical time-series model.
 
@@ -200,7 +198,7 @@ Seasonal auto-regressive moving average (SARIMA).  Our best model was ARIMA(0,1,
 
 [R Notebook](https://github.com/deepix/w271-labs/blob/master/Lab_3/DanielleAdler_CraigFujii_DeepakNagaraj_Lab3_v2.pdf) (private, available upon request)
 
-### Do traffic laws reduce deaths due to accidents?
+### Do traffic laws really reduce deaths due to accidents?
 
 Speed limits, seat belts, blood alcohol limits: do these reduce fatalities?  (Yes.)
 
