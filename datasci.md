@@ -46,6 +46,19 @@ The best performing model (MobileNet) had 95% accuracy.
 
 [Report](https://github.com/deepix/w251finalproject/blob/master/w251_final_project_paper.pdf) [Presentation](https://github.com/deepix/w251finalproject/blob/master/W251_Final_Presentation_Deepak_Mike_Roland.pdf) (public)
 
+### Can distractions affect your focus?
+
+Statistical field experiment to measure causal inference: we use a
+difference-in-differences, within-subject design.  We recruited about
+150 subjects on Amazon MTurk for this experiment.  We measured focus
+via response time and correctness, with both "relaxing" and
+"busy-work" distractions.  We found statistical significance (at 95%
+confidence level) for one of our claims.
+
+[Report](https://docs.google.com/document/d/10j1c6jT9Xl_NE6KocqmeKRCGW8Nqkc7gSyFAX2GqLFg/edit?usp=sharing)
+(public, dataset available upon request)
+
+
 ## Private
 
 The following projects are private in accordance with Berkeley's
@@ -117,9 +130,6 @@ Principal component analysis (PCA), k-means clustering, Gaussian mixture models
 
 [Report](https://github.com/deepix/w207-projects/blob/master/deepak_nagaraj_p3.ipynb) (private, available upon request)
 
-### Can excessive Internet usage reduce deep analytical thinking?
-
-Statistical field experiment to detect and measure causal inference.  In progress as of Oct 2019.
 
 ### Filtering spam at scale
 
