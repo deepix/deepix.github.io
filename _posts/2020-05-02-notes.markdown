@@ -1,0 +1,79 @@
+---
+layout: post
+title: How are you saving your knowledge?
+tags: notes knowledge mindmap
+---
+
+We live in a "knowledge economy".  Every day brings with it new
+information.  Do you have an external system to store your knowledge
+efficiently and effectively?
+
+<!--more-->
+
+There's a constant stream of Web sites, books, newsletters, courses
+online and a lot of that information is something I need to keep
+either in my head, or in some place outside that's readily accessible.
+My work often needs researching online, understanding a complex code
+base, or brainstorming new ideas.  All of this becomes harder if I
+don't have an effective system to represent knowledge, because I
+cannot use all the information to learn, understand or make decisions.
+In fact, it degenerates into a non-system: I'll only remember the most
+recent, or the most egregious material.  So, in order to combat this,
+I've tried a lot of things over the years from the simplest to the
+sophisticated: browser bookmarks, Post-Its and handwritten notes,
+folders, both paper and digital, Evernote, wiki.  None of these has
+worked well for me.
+
+Sometime earlier this year, I realized that knowledge is best
+represented as a hierarchical graph data structure: you have nodes
+that represent information, and edges that connect disparate
+information nodes.  You also compress information by summarizing them
+and storing them as higher-order nodes.  So you have a hierarchical
+graph in your head.  You constantly move and reorganize nodes, as you
+digest new information.  Do you see the problem now?  Some of the
+tools I tried out are linear, not graphical: such as text notes you
+capture in a diary or on Evernote.  Notebooks cannot capture
+hyperlinks, pictures, or let us navigate easily.  The linear narrative
+is good for stories, not knowledge.  Folders can aggregate
+information, but they don't provide enough context on each file or
+across files.
+
+Armed with this discovery, I started using a system that's closer to
+what my brain uses: mind maps.  I cannot thank myself enough for
+trying this out, because it has proved to be exactly the system I was
+looking for.
+
+A mind map is a graph, again mostly hierarchical.  For any node, I can
+add notes to provide context, hyperlinks to Web pages, and any
+relevant pictures.  For some nodes, I also add icons such as ticks or
+cautions, or typographical highlights.  The graphs are very much
+alive, because I update them as I incorporate new knowledge.
+Sometimes a map grows too big, but I can branch it off into its own
+graph, linked back to the original map.  Can you imagine doing all of
+this on any other system?
+
+Since switching to mind maps, I've captured talks, courses, books
+efficiently.  I can go back to them and navigate easily, going down
+only the hierarchy that interests me.  I get a big picture overview by
+looking at the top-level nodes, but also how they are all connected
+together by the edges.  I can brainstorm efficiently, curating them as
+I move the nodes around.  My code reviews are better now, because I go
+from code-level nodes to higher-level concept nodes.  Spaced
+repetition assumes you've got material to review: with mind maps,
+there's material, and it's accessible.  I even collect and manage my
+TODOs in a map, so that I can see how my projects are making progress.
+Earlier, I felt a sense of despair that I was losing the battle of
+information.  Now I feel I'm more in control.
+
+I encourage you to try a mind map.  I think schools and universities
+should publish such maps for material they intend to teach.  This can
+vastly improve the effectiveness of education, because what is it if
+not a transfer of knowledge from the teacher to the student?
+
+I made a mind map of this blog post, to give an example.  It also has
+links to two other mind maps of talks I recently listened to.
+
+<p><img src="files/mindmap.png" width="70%"></p>
+
+<a href="https://www.mindmeister.com/1491613061">Click here to go to
+the mind map.</a>
