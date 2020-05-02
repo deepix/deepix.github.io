@@ -73,7 +73,7 @@ not a transfer of knowledge from the teacher to the student?
 I made a mind map of this blog post, to give an example.  It also has
 links to two other mind maps of talks I recently listened to.
 
-<p><img src="files/mindmap.png" width="70%"></p>
+<p><img src="/files/mindmap.png" width="70%"></p>
 
 <a href="https://www.mindmeister.com/1491613061">Click here to go to
 the mind map.</a>

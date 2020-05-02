@@ -200,8 +200,8 @@ returns before the linger interval.
 * If this is a non-blocking socket, `close()` does not block, but the
   system still tries to drain data.
 
-I've posted the test programs: [server](files/linsvr.c),
-[client](files/linclt.c).
+I've posted the test programs: [server](/files/linsvr.c),
+[client](/files/linclt.c).
 
 ### To linger or not, that is the question
 
