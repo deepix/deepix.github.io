@@ -73,7 +73,5 @@ not a transfer of knowledge from the teacher to the student?
 I made a mind map of this blog post, to give an example.  It also has
 links to two other mind maps of talks I recently listened to.
 
-<p><img src="/files/mindmap.png" width="70%"></p>
+<iframe width="600" height="400" frameborder="0" src="https://www.mindmeister.com/maps/public_map_shell/1491613061/mind-maps-for-knowledge-representation?width=600&height=400&z=auto&no_share=1" scrolling="no" style="overflow: hidden; margin-bottom: 5px;">Your browser is not able to display frames. Please visit <a href="https://www.mindmeister.com/1491613061/mind-maps-for-knowledge-representation" target="_blank">Mind maps for knowledge representation</a> on MindMeister.</iframe><div class="mb-5"><a href="https://www.mindmeister.com/1491613061/mind-maps-for-knowledge-representation" target="_blank">Mind maps for knowledge representation</a> by <a href="https://www.mindmeister.com/users/channel/43268399" target="_blank">Deepak Nagaraj</a></div>
 
-<a href="https://www.mindmeister.com/1491613061">Click here to go to
-the mind map.</a>
