@@ -114,7 +114,7 @@ should create less wasted work.  This should create more time, and in
 this time, you probably apply the same idea to more projects and
 deliver them well.  This is the flywheel.
 
-In any case, don't attempt to do a `SELECT (*)` on an infinite
+In any case, don't attempt to do a `select("*")` on an infinite
 knowledgebase.
 
 
