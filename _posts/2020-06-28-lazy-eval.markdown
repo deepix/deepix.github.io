@@ -1,0 +1,127 @@
+---
+layout: post
+title: Lazy evaluation in real life
+tags: spark functional-programming productivity
+---
+
+There are so many great ideas in engineering we can take home and
+ apply to our own lives.  Today I will talk about one of them: lazy
+ evaluation.
+
+<!--more-->
+
+### The Concept
+
+Lazy evaluation is simple to state: when given a task, you don't start
+doing it right away.  Instead, you keep accumulating tasks until you
+see an end-goal.  At that point, you work backwards to do just enough
+work.
+
+It's simple, but it's counter-intuitive.  You have to wrestle with it
+a bit to understand it.  Let me give an example from Spark, which is
+the poster-child of lazy evaluation strategies.
+
+Suppose you want to select some rows in a table, filter based on a
+condition, then save as a table.  In Spark, you could say:
+
+{% highlight python %}
+df.select("*").filter("foo > 50").saveAsTable("finalTable")
+{% endhighlight %}
+
+Let's break it down.
+
+1. Note the first function call.  When Spark sees `df.select("*")`, does
+it fetch everything from the table?  No!  It only saves a note, and
+continues to look for an end-goal.
+
+2. You then specify a condition to filter upon: still not an end goal,
+so it adds to its notes and continues to wait.
+
+3. Then, it sees an output call, the `saveAsTable()`.  Ah, here comes
+   the end-goal.
+
+Spark now works _backward_: it sees a filter.  Before that, it sees a
+`select("*")`.  It can push the condition _backwards_ to the select,
+so that rows that do not match can be discarded immediately at read
+time.  Quite efficient.
+
+Now imagine if Spark worked like traditional eager programs.  You
+would run out of memory right at the `select("*")` step, and the job
+would fail.
+
+### In real life
+
+Lazy evaluation is a very powerful idea.  It gives you a framework to
+know what to do, in the face of unlimited information: It says, you
+should not be eager.
+
+We live in an age where data is infinite.  There is a multitude of
+courses, books, websites on any important topic, and there are new
+things coming out every day.  You cannot eagerly learn everything out
+there.  There's not enough time, and even if you did, as an individual
+you're a weak learner.<sup>1</sup>
+
+Instead, the lazy evaluation recipe is as follows:
+
+1. You should ask yourself, _what is your end goal?_ What do you need
+to know or do, based on that end-goal, and what can you stop doing?
+
+2. Out of all the things you could be doing, you should select (or at
+least prioritize) those that will take you _closer_ to your end-goal.
+
+3. Further, you should minimize or eliminate tasks that do not lead to
+your end goal, or at least you should be aware that they could be
+wasted effort.
+
+Of course, it's not always possible to know what can or cannot lead
+into the output.  But it's important to keep this in our mind, so that
+we can limit the damage if we stray from the path, by stopping such
+work after a pre-determined point in time.
+
+### Two Examples
+
+This situation frequently happens during a career move.  Interviews
+are daunting because they may choose to ask anything, so you should be
+prepared for everything, right?  And also learn all the new things
+since you left school?
+
+Instead, a different strategy is to look at job descriptions for the
+role or companies you would like to go to.  You build a list of skills
+you need to know, and continue to work backward on acquiring those
+skills from the best possible resource in a reasonable amount of time.
+
+A similar situation can occur in research-oriented projects, where it
+is easy to lose track of the deliverable in the name of research or
+trying new ideas.  Especially in machine learning, a complex model
+with say 78% accuracy is not that much better than a simpler model with
+75% accuracy.
+
+### Not a New Idea
+
+The idea of lazy evaluation is not new.  Relational databases have
+been building query plans since 1980s.  The concept is part of the
+functional programming repertoire since 1970.  Operating systems do
+not load the entire program into memory: they load the relevant pages
+as your program executes, a concept known as lazy loading.
+
+Amazingly for a technical idea, lazy evaluation seems to be well-known
+in self help literature: Steven Covey said in his famous _Seven
+Habits_ book, "Begin with the end in mind".  One would hope he had an
+intuition about lazy evaluation.
+
+Lazy evaluation is one of those flywheel ideas.  When you apply it, it
+should create less wasted work.  This should create more time, and in
+this time, you probably apply the same idea to more projects and
+deliver them well.  This is the flywheel.
+
+In any case, don't attempt to do a `SELECT (*)` on an infinite
+knowledgebase.
+
+
+--
+
+<small><sup>1</sup> This is a concept in machine learning, where a
+bunch of different models can often do better than any single model.
+It is known as an ensemble.  I like to think of Kaggle.com as an
+ensemble of humans, often coming up with ensembles of learning
+models.</small>
