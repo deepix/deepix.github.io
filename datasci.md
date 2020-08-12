@@ -8,6 +8,20 @@ This page showcases a portfolio of Data Science projects I've done.
 
 ## Public
 
+### Capstone project at UC Berkeley: Global Irrigation Map
+
+We use satellite imagery, soil and climate data to map worldwide extent
+of cropland irrigation, and how it has changed from 2001 to 2015.
+
+I worked on this even after graduation, and a revised version is under
+review for publication.
+
+In collaboration with Dept of Environmental Studies, UC Berkeley.
+
+[Version 2](http://deepix.github.io/2020/07/05/global-irrigation-map.html) |
+[Version 1](http://www.globalirrigationmap.org/) |
+[Code](https://github.com/deepix/globalirrigationmap) (all public)
+
 ### Improving diversity in NYC schools
 
 _Which schools in New York need the most help, to improve diversity in SHSAT exam?_
