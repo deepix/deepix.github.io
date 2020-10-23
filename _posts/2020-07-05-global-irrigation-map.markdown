@@ -8,6 +8,8 @@ For our capstone project at UC Berkeley, we worked with the Department of Enviro
 
 <center><figure><img src="/files/irr_extent.png"><figcaption>Global Irrigation Extent, as per our ML Model</figcaption></figure></center>
 
+**Update Aug/5/2020:** New blog post: a behind the scenes look on [how we built the model](http://deepix.github.io/2020/08/05/ml-on-gee.html).
+
 <!--more-->
 
 ### About the project
