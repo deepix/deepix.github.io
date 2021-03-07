@@ -2,6 +2,7 @@
 layout: page
 title: Data Science
 permalink: /datasci/
+newlink: /datasci/
 ---
 
 This page showcases a portfolio of Data Science projects I've done.

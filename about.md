@@ -2,6 +2,7 @@
 layout: page
 title: About
 permalink: /about/
+newlink: /about/
 ---
 
 Hello, I'm Deepak.  I work as a machine learning engineer at Citrix.
