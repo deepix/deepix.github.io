@@ -2,6 +2,7 @@
 layout: post
 title: The program that would not go away
 tags: unix signals fork exec
+newlink: /posts/2017-02-17-sigterm/
 ---
 
 This post is about a program hang.  The hang was in the Python process

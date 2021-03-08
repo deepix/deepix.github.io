@@ -2,6 +2,7 @@
 layout: post
 title: Rotating the log makes it empty
 tags: logrotate syslog freebsd
+newlink: /posts/2016-07-29-logrotate/
 ---
 
 If you don't do log rotation right, you may have a full hard drive and

@@ -2,6 +2,7 @@
 layout: post
 title: Debugging emacs slowness
 tags: emacs elisp debugging python
+newlink: /posts/2016-09-29-slowemacs/
 ---
 
 I use Emacs (emerge) while merging files.  Today, when trying to merge

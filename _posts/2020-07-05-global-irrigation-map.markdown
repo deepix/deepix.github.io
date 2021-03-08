@@ -2,6 +2,7 @@
 layout: post
 title: Global Irrigation Map, our capstone machine learning project
 tags: machine-learning geospatial-data google-earth-engine
+newlink: /posts/2020-07-05-global-irrigation-map/
 ---
 
 For our capstone project at UC Berkeley, we worked with the Department of Environmental Studies.  We developed a machine learning model that we continued to improve even after the course term, and I'm happy to report that it is now under discussion to be a published paper -- a first for the program itself, according to our lecturer.

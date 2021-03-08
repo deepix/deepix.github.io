@@ -2,6 +2,7 @@
 layout: post
 title: Accessing home computer from anywhere
 tags: mac remotedesktop ssh tunnel
+newlink: /posts/2017-11-26-mac-remote-desktop/
 ---
 
 Do you sometimes want to access your home computer from an outside

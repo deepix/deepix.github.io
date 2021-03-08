@@ -2,6 +2,7 @@
 layout: post
 title: Correct way to create a directory in Python
 tags: python mkdir unix concurrency
+newlink: /posts/2017-02-02-eexists/
 ---
 
 Can you see the problem with this code?  It comes from Ansible, v2.1.1.0.

@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
-<title>Redirecting to {{ site.domain_url }}{{ page.newlink }}</title>
-<meta http-equiv="refresh" content="3; URL={{ site.domain_url }}{{ page.newlink }}">
-<link rel="canonical" href="{{ site.domain_url }}{{ page.newlink }}">
+<title>Redirecting to {{ site.newdomainurl }}</title>
+<meta http-equiv="refresh" content="1; URL={{ site.newdomainurl }}{{ page.newlink }}">
+<link rel="canonical" href="{{ site.newdomainurl }}{{ page.newlink }}">
 
-<body style="text-align: center">
-Redirecting to <a href="{{ site.domain_url }}{{ page.newlink }}">{{ site.domain_url }}{{ page.newlink }}</a>
+<div style="text-align: center; background-color: gold; margin: 35px; padding: 35px; border: 1px dotted black">
+I have moved into a new home!  Redirecting shortly to <a href="{{ site.newdomainurl }}{{ page.newlink }}">{{ site.newdomainurl }}{{ page.newlink }}</a>
+</div>
 

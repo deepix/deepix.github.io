@@ -2,6 +2,7 @@
 layout: post
 title: Build fails, only for you
 tags: build autoconf gcc ld
+newlink: /posts/2016-06-16-autoconf/
 ---
 
 As programmers, we face it many times: a build fails on only our

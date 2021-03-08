@@ -2,6 +2,7 @@
 layout: post
 title: Notes on Spark Streaming app development
 tags: spark streaming kafka
+newlink: /posts/2019-12-18-spark-streaming/
 ---
 
 This post contains various notes from the second half of this

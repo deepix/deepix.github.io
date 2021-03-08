@@ -2,6 +2,7 @@
 layout: post
 title: Lazy evaluation in real life
 tags: spark functional-programming productivity
+newlink: /posts/2020-06-28-lazy-eval/
 ---
 
 There are so many great ideas in engineering we can take home and

@@ -2,6 +2,7 @@
 layout: post
 title: Don't hang up on me
 tags: signals shell unix sighup
+newlink: /posts/2016-07-30-sighup/
 ---
 
 Can you tell me when a shell sends a "HANGUP" signal to a process?

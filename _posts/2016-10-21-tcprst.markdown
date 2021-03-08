@@ -2,6 +2,7 @@
 layout: post
 title: Resetting a TCP connection and SO_LINGER
 tags: tcp freebsd networking
+newlink: /posts/2016-10-21-tcprst/
 ---
 
 Can you quickly close a TCP connection in your program by sending a

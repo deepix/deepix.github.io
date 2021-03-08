@@ -2,6 +2,7 @@
 layout: post
 title: Socket timeout
 tags: hadoop hdfs java networking debugging
+newlink: /posts/2016-06-29-sockettimeout/
 ---
 
 Have you run into a problem that happens only once in a while, and you

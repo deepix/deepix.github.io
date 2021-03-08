@@ -2,6 +2,7 @@
 layout: post
 title: How are you saving your knowledge?
 tags: notes knowledge mindmap
+newlink: /posts/2020-05-02-notes/
 ---
 
 We live in a "knowledge economy".  Every day brings with it new

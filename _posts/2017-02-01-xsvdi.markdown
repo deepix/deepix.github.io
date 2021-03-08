@@ -2,6 +2,7 @@
 layout: post
 title: Getting rid of unused virtual disks on XenServer
 tags: xenserver virtualization shell-scripts
+newlink: /posts/2017-02-01-xsvdi/
 ---
 
 A continuous test server I'd set up had stopped working.  The

@@ -2,6 +2,7 @@
 layout: post
 title: Weird PID Files
 tags: unix daemons debugging shell-scripts
+newlink: /posts/2016-09-29-pidfiles/
 ---
 
 This is a story of multiple processes running on a system, but with

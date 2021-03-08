@@ -1,11 +1,8 @@
 ---
-
 layout: post
-
 title: Livy is out of memory
-
 tags: spark livy azure
-
+newlink: /posts/2018-03-11-livy-oom/
 ---
 
 Spark jobs were failing.  All of them.  The data pipeline had stopped.  This is a tale of high-pressure debugging.

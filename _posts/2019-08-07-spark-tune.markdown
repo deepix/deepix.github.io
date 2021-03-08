@@ -2,6 +2,7 @@
 layout: post
 title: The Spark tunable that gave me 8X speedup
 tags: spark performance
+newlink: /posts/2019-08-07-spark-tune/
 ---
 
 There are many configuration tunables in Spark.  However, if you have

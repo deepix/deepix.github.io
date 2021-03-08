@@ -2,6 +2,7 @@
 layout: post
 title: ps | grep is broken on FreeBSD
 tags: ps grep freebsd shell
+newlink: /posts/2016-10-10-psww/
 ---
 
 It is true.  Even on the latest FreeBSD 11.0 (I checked the source tree).

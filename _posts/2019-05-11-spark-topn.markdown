@@ -2,6 +2,7 @@
 layout: post
 title: Getting top-N elements in Spark
 tags: spark
+newlink: /posts/2019-05-11-spark-topn/
 ---
 
 The documentation for pyspark `top()` function has this warning:

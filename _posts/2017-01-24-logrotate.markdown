@@ -2,6 +2,7 @@
 layout: post
 title: Log rotation, no code change needed
 tags: freebsd syslog logrotate newsyslog
+newlink: /posts/2017-01-24-logrotate/
 ---
 
 This post shows you how to rotate old logs from your application.

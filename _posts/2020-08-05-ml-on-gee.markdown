@@ -2,6 +2,7 @@
 layout: post
 title: How we built a global ML model with Google Earth Engine
 tags: data-science machine-learning google-earth-engine
+newlink: /posts/2020-08-05-ml-on-gee/
 ---
 
 A couple posts ago, I described the machine learning model that we developed to predict the [extent of cropland irrigation worldwide](http://127.0.0.1:4000/2020/07/05/global-irrigation-map.html).  This post is a collection of all the things I learned about Google Earth Engine that went into running a global-scale model successfully.

@@ -2,6 +2,7 @@
 layout: post
 title: The importance of selection effect
 tags: data-science causality cognitive-bias
+newlink: /posts/2020-07-17-selection-effect/
 ---
 
 It was the first class of a data science course in the MIDS program.  Our instructor started off with a question: "Do you think this academic program gives you a better career?"  We gave a bunch of answers, quite the ignorant folks that we were.  Of course, is this even a question at this point?!  Yes, here are all the new things we're learning.  Yes, the instructors are top-notch. Yes, look at the syllabus and the projects, yada yada ... nothing surprising there.
